@@ -123,6 +123,7 @@
       max-width: 85%;
       word-wrap: break-word;
       animation: fadeIn 0.3s ease;
+      line-height: 1.5;
     }
     
     @keyframes fadeIn {
@@ -139,6 +140,36 @@
     .message.bot {
       background: white;
       border: 1px solid #ddd;
+    }
+    
+    /* Styling untuk teks bold */
+    .message strong {
+      font-weight: 700;
+      color: inherit;
+    }
+    
+    /* Styling untuk teks italic */
+    .message em {
+      font-style: italic;
+    }
+    
+    /* Styling untuk code */
+    .message code {
+      background: rgba(0,0,0,0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+    
+    /* Khusus untuk pesan bot */
+    .message.bot code {
+      background: rgba(0,0,0,0.05);
+    }
+    
+    /* Khusus untuk pesan user */
+    .message.user code {
+      background: rgba(255,255,255,0.2);
     }
     
     /* Input Area */
@@ -219,7 +250,7 @@
   <div class="chat-widget minimized" id="chatWidget">
     <div class="widget-header">
       <div>
-        <h3> Smart Lab Assistant</h3>
+        <h3>💬 Smart Lab Assistant</h3>
         <p>Teknik Material & Metalurgi ITS</p>
       </div>
       <button class="minimize-btn" onclick="toggleChat()">−</button>
@@ -269,6 +300,25 @@
         kirimPesan();
       }
     }
+
+    // Fungsi untuk convert markdown ke HTML
+    function markdownToHtml(text) {
+      if (!text) return '';
+      
+      // Convert **bold** menjadi <strong>
+      text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // Convert *italic* menjadi <em>
+      text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      
+      // Convert `code` menjadi <code>
+      text = text.replace(/`(.*?)`/g, '<code style="background:rgba(0,0,0,0.1);padding:2px 6px;border-radius:3px;">$1</code>');
+      
+      // Convert baris baru menjadi <br>
+      text = text.replace(/\n/g, '<br>');
+      
+      return text;
+    }
     
     function kirimPesan() {
       const input = document.getElementById('userInput');
@@ -291,14 +341,14 @@
       const url = new URL(APPS_SCRIPT_URL);
       url.searchParams.set('action', 'chat');
       url.searchParams.set('message', pesan);
-      url.searchParams.set('history', encodeURIComponent(JSON.stringify(chatHistory.slice(-6))));
+      // PERBAIKAN: Hapus encodeURIComponent, karena searchParams.set sudah otomatis meng-encode dengan benar
+      url.searchParams.set('history', JSON.stringify(chatHistory.slice(-6)));
       
       // Gunakan GET (tidak memicu preflight CORS OPTIONS)
       fetch(url.toString(), {
         method: 'GET'
-        // TIDAK PERLU header Content-Type untuk GET sederhana
       })
-      .then(response => response.text()) // Apps Script mengembalikan text, kita parse manual
+      .then(response => response.text())
       .then(text => {
         try {
           const data = JSON.parse(text);
@@ -327,7 +377,10 @@
       const chatBox = document.getElementById('chatBox');
       const messageDiv = document.createElement('div');
       messageDiv.className = 'message ' + pengirim;
-      messageDiv.innerHTML = teks.replace(/\n/g, '<br>');
+      
+      // CONVERT MARKDOWN KE HTML
+      messageDiv.innerHTML = markdownToHtml(teks);
+      
       chatBox.appendChild(messageDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
