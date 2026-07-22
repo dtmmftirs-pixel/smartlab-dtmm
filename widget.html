@@ -50,9 +50,9 @@
       bottom: 20px;
       right: 20px;
       width: 380px;
-      height: calc(100vh - 100px); /* Sesuaikan dengan viewport */
-      max-height: 650px; /* Maksimal 650px */
-      min-height: 400px; /* Minimal 400px */
+      height: calc(100vh - 100px);
+      max-height: 650px;
+      min-height: 400px;
       background: white;
       border-radius: 16px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.2);
@@ -112,11 +112,11 @@
     
     /* Chat Box */
     .chat-box {
-      flex: 1; /* Ambil semua space yang tersedia */
+      flex: 1;
       overflow-y: auto;
       padding: 20px;
       background: #f8f9fa;
-      min-height: 200px; /* Minimal height untuk chat box */
+      min-height: 200px;
     }
     
     .message {
@@ -165,14 +165,42 @@
       font-size: 0.9em;
     }
     
-    /* Khusus untuk pesan bot */
     .message.bot code {
       background: rgba(0,0,0,0.05);
     }
     
-    /* Khusus untuk pesan user */
     .message.user code {
       background: rgba(255,255,255,0.2);
+    }
+
+    /* === BARU: Styling untuk pesan "Sedang berpikir" === */
+    .thinking-message {
+      background: white;
+      border: 1px solid #ddd;
+      opacity: 0.8;
+    }
+
+    .thinking-dots {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .thinking-dots span {
+      width: 8px;
+      height: 8px;
+      background: #1a73e8;
+      border-radius: 50%;
+      display: inline-block;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .thinking-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .thinking-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
     }
     
     /* Input Area */
@@ -264,7 +292,7 @@
         <strong>Halo! 👋</strong><br><br>
         Saya asisten virtual Smart Lab.<br>
         Departemen Teknik Material dan Metalurgi<br>
-        Silahkan bertanya tentang fasilitas pengujian yang kami miliki.<br>
+        Silahkan bertanya tentang fasilitas pengujian yang kami miliki.
       </div>
     </div>
     
@@ -304,20 +332,43 @@
     // Fungsi untuk convert markdown ke HTML
     function markdownToHtml(text) {
       if (!text) return '';
-      
-      // Convert **bold** menjadi <strong>
       text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      
-      // Convert *italic* menjadi <em>
       text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-      
-      // Convert `code` menjadi <code>
       text = text.replace(/`(.*?)`/g, '<code style="background:rgba(0,0,0,0.1);padding:2px 6px;border-radius:3px;">$1</code>');
-      
-      // Convert baris baru menjadi <br>
       text = text.replace(/\n/g, '<br>');
-      
       return text;
+    }
+    
+    // === BARU: Fungsi untuk menampilkan pesan "Sedang berpikir..." ===
+    function tampilkanPesanSedangBerpikir() {
+      const chatBox = document.getElementById('chatBox');
+      const thinkingDiv = document.createElement('div');
+      thinkingDiv.className = 'message bot thinking-message';
+      thinkingDiv.id = 'thinking-' + Date.now();
+      
+      thinkingDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="thinking-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span style="font-style: italic; color: #666;">Sedang berpikir</span>
+        </div>
+      `;
+      
+      chatBox.appendChild(thinkingDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      
+      return thinkingDiv.id;
+    }
+
+    // === BARU: Fungsi untuk menghapus pesan "Sedang berpikir..." ===
+    function hapusPesanSedangBerpikir(id) {
+      const thinkingElement = document.getElementById(id);
+      if (thinkingElement) {
+        thinkingElement.remove();
+      }
     }
     
     function kirimPesan() {
@@ -337,19 +388,22 @@
       
       chatHistory.push({ role: 'user', text: pesan });
       
-      // --- PERBAIKAN CORS: Gunakan GET dengan URL Parameters ---
+      // Tampilkan indikator berpikir
+      const thinkingId = tampilkanPesanSedangBerpikir();
+      
       const url = new URL(APPS_SCRIPT_URL);
       url.searchParams.set('action', 'chat');
       url.searchParams.set('message', pesan);
-      // PERBAIKAN: Hapus encodeURIComponent, karena searchParams.set sudah otomatis meng-encode dengan benar
       url.searchParams.set('history', JSON.stringify(chatHistory.slice(-6)));
       
-      // Gunakan GET (tidak memicu preflight CORS OPTIONS)
       fetch(url.toString(), {
         method: 'GET'
       })
       .then(response => response.text())
       .then(text => {
+        // Hapus indikator berpikir segera setelah respons diterima
+        hapusPesanSedangBerpikir(thinkingId);
+        
         try {
           const data = JSON.parse(text);
           if (data.success) {
@@ -365,6 +419,7 @@
       })
       .catch(error => {
         console.error('Fetch error:', error);
+        hapusPesanSedangBerpikir(thinkingId); // Pastikan dihapus juga saat error
         tampilkanPesan('⚠️ Maaf, terjadi kesalahan koneksi.', 'bot');
       })
       .finally(() => {
@@ -377,15 +432,12 @@
       const chatBox = document.getElementById('chatBox');
       const messageDiv = document.createElement('div');
       messageDiv.className = 'message ' + pengirim;
-      
-      // CONVERT MARKDOWN KE HTML
       messageDiv.innerHTML = markdownToHtml(teks);
-      
       chatBox.appendChild(messageDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
     
-    // Auto-open chat setelah 2 detik (opsional)
+    // Auto-open chat setelah 2 detik
     setTimeout(() => {
       if (!isChatOpen) {
         toggleChat();
