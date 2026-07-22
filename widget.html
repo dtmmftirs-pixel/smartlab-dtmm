@@ -278,7 +278,6 @@
       if (!pesan) return;
       
       console.log("Mengirim pesan:", pesan);
-      console.log("URL Apps Script:", APPS_SCRIPT_URL);
       
       tampilkanPesan(pesan, 'user');
       input.value = '';
@@ -288,46 +287,35 @@
       
       chatHistory.push({ role: 'user', text: pesan });
       
-      // Debug: Cek apakah URL valid
-      if (!APPS_SCRIPT_URL || !APPS_SCRIPT_URL.includes('script.google.com')) {
-        console.error("URL Apps Script tidak valid!");
-        tampilkanPesan('⚠️ Konfigurasi error. URL Apps Script tidak valid.', 'bot');
-        sendBtn.disabled = false;
-        sendBtn.textContent = 'Kirim';
-        return;
-      }
+      // --- PERBAIKAN CORS: Gunakan GET dengan URL Parameters ---
+      const url = new URL(APPS_SCRIPT_URL);
+      url.searchParams.set('action', 'chat');
+      url.searchParams.set('message', pesan);
+      url.searchParams.set('history', encodeURIComponent(JSON.stringify(chatHistory.slice(-6))));
       
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'chat',
-          message: pesan,
-          history: chatHistory.slice(-6)
-        }),
-        mode: 'cors'
+      // Gunakan GET (tidak memicu preflight CORS OPTIONS)
+      fetch(url.toString(), {
+        method: 'GET'
+        // TIDAK PERLU header Content-Type untuk GET sederhana
       })
-      .then(response => {
-        console.log("Response status:", response.status);
-        if (!response.ok) {
-          throw new Error('HTTP error! status: ' + response.status);
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log("Response data:", data);
-        if (data.success) {
-          tampilkanPesan(data.reply, 'bot');
-          chatHistory.push({ role: 'bot', text: data.reply });
-        } else {
-          tampilkanPesan('⚠️ Error: ' + (data.error || 'Gagal memproses'), 'bot');
+      .then(response => response.text()) // Apps Script mengembalikan text, kita parse manual
+      .then(text => {
+        try {
+          const data = JSON.parse(text);
+          if (data.success) {
+            tampilkanPesan(data.reply, 'bot');
+            chatHistory.push({ role: 'bot', text: data.reply });
+          } else {
+            tampilkanPesan('⚠️ Error: ' + (data.error || 'Gagal memproses'), 'bot');
+          }
+        } catch (e) {
+          console.error('Parse error:', e, 'Raw text:', text);
+          tampilkanPesan('⚠️ Maaf, format respons tidak dikenali.', 'bot');
         }
       })
       .catch(error => {
         console.error('Fetch error:', error);
-        tampilkanPesan('⚠️ Maaf, terjadi kesalahan koneksi. Periksa console untuk detail.', 'bot');
+        tampilkanPesan('⚠️ Maaf, terjadi kesalahan koneksi.', 'bot');
       })
       .finally(() => {
         sendBtn.disabled = false;
