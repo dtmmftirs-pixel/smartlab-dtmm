@@ -7,7 +7,6 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -16,9 +15,7 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
-      overflow: hidden;
     }
-    
     .container {
       max-width: 450px;
       width: 100%;
@@ -27,174 +24,62 @@
       border-radius: 16px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.2);
       text-align: center;
-      max-height: 90vh;
-      overflow-y: auto;
     }
-    
-    h1 { 
-      color: #1a73e8; 
-      margin-bottom: 15px; 
-      font-size: 26px; 
-      font-weight: 700;
-      text-align: center;
-    }
-    
-    .subtitle { 
-      color: #666; 
-      margin-bottom: 30px; 
-      font-size: 14px; 
-      line-height: 1.6;
-      text-align: center;
-    }
-    
-    .g_id_signin { 
-      margin: 25px auto;
-      display: flex;
-      justify-content: center;
-    }
-    
-    .divider {
-      margin: 30px 0;
-      border-top: 2px solid #eee;
-      position: relative;
-      text-align: center;
-    }
-    
-    .divider-text {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      padding: 0 20px;
-      color: #999;
-      font-size: 14px;
-    }
-    
+    h1 { color: #1a73e8; margin-bottom: 15px; font-size: 26px; font-weight: 700; }
+    .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; line-height: 1.6; }
+    .g_id_signin { margin: 25px auto; display: flex; justify-content: center; }
+    .divider { margin: 30px 0; border-top: 2px solid #eee; position: relative; text-align: center; }
+    .divider-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 0 20px; color: #999; font-size: 14px; }
     .btn-chat {
-      display: inline-block;
-      width: 100%;
-      padding: 15px 25px;
+      display: inline-block; width: 100%; padding: 15px 25px;
       background: linear-gradient(135deg, #28a745 0%, #218838 100%);
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 16px;
-      transition: all 0.3s ease;
-      border: none;
-      cursor: pointer;
-      text-align: center;
+      color: white; text-decoration: none; border-radius: 8px;
+      font-weight: 600; font-size: 16px; transition: all 0.3s ease;
+      border: none; cursor: pointer; text-align: center;
     }
-    
-    .btn-chat:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(40,167,69,0.4);
-    }
-
-    .loading-state {
-      color: #1a73e8;
-      font-weight: 600;
-      padding: 20px;
-      font-size: 16px;
-    }
-    .loading-state span {
-      display: block;
-      font-size: 13px;
-      font-weight: 400;
-      color: #666;
-      margin-top: 8px;
-    }
-    .error-state {
-      color: #dc3545;
-      background: #f8d7da;
-      padding: 15px;
-      border-radius: 8px;
-      margin-top: 20px;
-      font-size: 14px;
-      line-height: 1.5;
-      border: 1px solid #f5c6cb;
-    }
-    .btn-retry {
-      margin-top: 15px;
-      padding: 10px 20px;
-      background: #1a73e8;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-    .btn-retry:hover {
-      background: #0d5bb5;
-    }
-    
-    @media (max-height: 700px) {
-      .container { padding: 30px 25px; }
-      h1 { font-size: 22px; margin-bottom: 12px; }
-      .subtitle { font-size: 13px; margin-bottom: 20px; }
-    }
-    
-    @media (max-width: 480px) {
-      .container { padding: 30px 20px; }
-    }
+    .btn-chat:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(40,167,69,0.4); }
+    .loading-state { color: #1a73e8; font-weight: 600; padding: 20px; font-size: 16px; }
+    .loading-state span { display: block; font-size: 13px; font-weight: 400; color: #666; margin-top: 8px; }
+    .error-state { color: #dc3545; background: #f8d7da; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 14px; line-height: 1.5; border: 1px solid #f5c6cb; }
+    .btn-retry { margin-top: 15px; padding: 10px 20px; background: #1a73e8; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
+    .btn-retry:hover { background: #0d5bb5; }
   </style>
 </head>
 <body>
   <div class="container" id="loginContainer">
     <h1>🔐 Smart Lab Login</h1>
-    <p class="subtitle">
-      Khusus untuk <strong>Staff</strong> dan <strong>Manajemen</strong><br>
-      Departemen Teknik Material & Metalurgi ITS
-    </p>
+    <p class="subtitle">Khusus untuk <strong>Staff</strong> dan <strong>Manajemen</strong><br>Departemen Teknik Material & Metalurgi ITS</p>
     
-    <!-- Ganti data-client_id dengan Client ID Anda yang sebenarnya -->
     <div id="g_id_onload"
          data-client_id="96706539653-e1h205ej3ne8uhmehl6nfe4bdhgkimm2.apps.googleusercontent.com"
          data-callback="handleLogin"
          data-ux_mode="popup">
     </div>
-    <div class="g_id_signin"
-         data-type="standard"
-         data-size="large"
-         data-text="signin_with">
-    </div>
+    <div class="g_id_signin" data-type="standard" data-size="large" data-text="signin_with"></div>
     
-    <div class="divider">
-      <span class="divider-text">atau</span>
-    </div>
-    
+    <div class="divider"><span class="divider-text">atau</span></div>
     <a href="chatbot.html" class="btn-chat">💬 Manfaatkan <strong>Smart Lab Assistant</strong></a>
   </div>
 
-  <!-- Pastikan config.js berisi: const API_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"; -->
   <script src="config.js"></script>
   <script>
-    // Fungsi utama saat user berhasil login via Google
     async function handleLogin(response) {
-      // 1. Decode token untuk mendapatkan email
       const payload = JSON.parse(atob(response.credential.split('.')[1]));
       const email = payload.email;
       
-      // 2. Tampilkan UI Loading
       document.getElementById('loginContainer').innerHTML = `
-        <div class="loading-state">
-          ⏳ Memverifikasi akses Anda...<br>
-          <span>${email}</span>
-        </div>
+        <div class="loading-state">⏳ Memverifikasi akses Anda...<br><span>${email}</span></div>
       `;
       
       try {
-        // 3. PANGGIL BACKEND MENGGUNAKAN FETCH (Bukan google.script.run)
-        // Pastikan variabel API_URL sudah didefinisikan di config.js
-        const apiEndpoint = typeof API_URL !== 'undefined' ? API_URL : 'GANTI_DENGAN_URL_WEB_APP_ANDA';
+        console.log("🔍 Mengirim request ke:", API_URL);
         
-        const fetchResponse = await fetch(apiEndpoint, {
+        const fetchResponse = await fetch(API_URL, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            // PENTING: 'text/plain' mencegah CORS preflight (OPTIONS request) 
+            // yang menyebabkan Google Apps Script mengembalikan halaman HTML error.
+            'Content-Type': 'text/plain;charset=utf-8',
           },
           body: JSON.stringify({
             action: 'verify',
@@ -202,47 +87,45 @@
           })
         });
 
-        const result = await fetchResponse.json();
+        const responseText = await fetchResponse.text();
+        console.log("📝 Raw Response:", responseText);
+        
+        let result;
+        try {
+          result = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error("❌ JSON Parse Error. Server mengembalikan HTML:", responseText.substring(0, 150));
+          throw new Error("Server tidak merespons dengan JSON. Periksa URL API dan pengaturan Deployment.");
+        }
 
-        // 4. Proses hasil dari backend
         if (result.success && (result.role === 'staff' || result.role === 'manajemen')) {
-          // SUKSES: Simpan data ke localStorage
           localStorage.setItem('g_token', response.credential);
           localStorage.setItem('user_email', result.email);
           localStorage.setItem('user_name', result.name);
           localStorage.setItem('user_role', result.role);
-          
-          // Redirect ke dashboard
           window.location.href = 'dashboard.html';
         } else {
-          // GAGAL: Tampilkan pesan error dari backend
           showError(result.error || 'Email Anda tidak terdaftar dalam sistem.');
         }
 
       } catch (err) {
-        // ERROR JARINGAN/SCRIPT
-        console.error("Verifikasi Error:", err);
-        showError('Gagal terhubung ke server. Periksa koneksi internet atau URL API. (' + err.message + ')');
+        console.error("❌ Verification Error:", err);
+        showError('Gagal terhubung ke server: ' + err.message);
       }
     }
 
-    // Fungsi helper untuk menampilkan error dengan rapi
     function showError(message) {
       document.getElementById('loginContainer').innerHTML = `
         <h1>⛔ Akses Ditolak</h1>
         <div class="error-state">${message}</div>
         <button class="btn-retry" onclick="window.location.reload()">🔄 Coba Lagi</button>
-        <div style="margin-top: 20px; font-size: 13px; color: #666;">
-          Hubungi admin lab jika Anda merasa ini adalah kesalahan.
-        </div>
+        <div style="margin-top: 20px; font-size: 13px; color: #666;">Hubungi admin lab jika Anda merasa ini adalah kesalahan.</div>
       `;
     }
     
-    // Cek saat halaman dimuat: Jika sudah login DAN punya role, langsung ke dashboard
     window.onload = function() {
       const token = localStorage.getItem('g_token');
       const role = localStorage.getItem('user_role');
-      
       if (token && role) {
         window.location.href = 'dashboard.html';
       }
