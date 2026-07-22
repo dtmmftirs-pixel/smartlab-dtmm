@@ -1,140 +1,113 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Lab - Chatbot Asisten</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-      overflow: hidden;
-    }
-    .header {
-      background: linear-gradient(135deg, #1a73e8 0%, #0d5bb5 100%);
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-    .header h1 { font-size: 24px; margin-bottom: 5px; }
-    .header p { font-size: 14px; opacity: 0.9; }
-    .chat-box {
-      height: 500px;
-      overflow-y: auto;
-      padding: 20px;
-      background: #f8f9fa;
-    }
-    .message {
-      margin-bottom: 15px;
-      padding: 12px 16px;
-      border-radius: 12px;
-      max-width: 80%;
-      word-wrap: break-word;
-      animation: fadeIn 0.3s ease;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .message.user {
-      background: #1a73e8;
-      color: white;
-      margin-left: auto;
-    }
-    .message.bot {
-      background: white;
-      border: 1px solid #ddd;
-    }
-    .input-area {
-      padding: 20px;
-      border-top: 1px solid #ddd;
-      display: flex;
-      gap: 10px;
-    }
-    .input-area input {
-      flex: 1;
-      padding: 12px 16px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 15px;
-    }
-    .input-area button {
-      padding: 12px 24px;
-      background: #1a73e8;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-    .input-area button:hover { background: #0d5bb5; }
-    .input-area button:disabled { background: #ccc; cursor: not-allowed; }
-    .back-link {
-      display: inline-block;
-      padding: 8px 16px;
-      background: rgba(255,255,255,0.2);
-      color: white;
-      text-decoration: none;
-      border-radius: 6px;
-      font-size: 14px;
-      margin-top: 10px;
-      transition: all 0.3s ease;
-    }
-    .back-link:hover { background: rgba(255,255,255,0.3); }
-    .info-banner {
-      background: #fff3cd;
-      border-left: 4px solid #ffc107;
-      padding: 12px 16px;
-      margin: 15px 20px;
-      border-radius: 4px;
-      font-size: 14px;
-      color: #856404;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>💬 Smart Lab Assistant</h1>
-      <p>Departemen Teknik Material & Metalurgi ITS</p>
-      <a href="index.html" class="back-link">← Staff Login</a>
-    </div>
-    
-    <div class="info-banner">
-      💡 <strong>Tips:</strong> Tanyakan tentang harga, durasi, atau syarat pengujian laboratorium
-    </div>
-    
-    <div class="chat-box" id="chatBox">
-      <div class="message bot">
-        <strong>Halo! 👋</strong><br><br>
-        Saya asisten virtual Smart Lab Teknik Material & Metalurgi ITS.<br><br>
-        Saya bisa membantu Anda dengan informasi:<br>
-        • Harga pengujian<br>
-        • Durasi pengerjaan<br>
-        • Syarat dan spesifikasi sampel<br>
-        • Dan informasi laboratorium lainnya<br><br>
-        <em>Silakan tanyakan apa saja!</em>
-      </div>
-    </div>
-    
-    <div class="input-area">
-      <input type="text" id="userInput" placeholder="Contoh: Berapa harga uji tarik?" onkeypress="handleEnter(event)">
-      <button id="sendBtn" onclick="kirimPesan()">Kirim</button>
-    </div>
-  </div>
+// script.js (Logika untuk chatbot.html)
 
-  <script src="config.js"></script>
-  <script src="script.js"></script>
-</body>
-</html>
+let chatHistory = [];
+
+function handleEnter(event) {
+  if (event.key === 'Enter') {
+    kirimPesan();
+  }
+}
+
+function kirimPesan() {
+  const input = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const pesan = input.value.trim();
+  
+  if (!pesan) return;
+  
+  console.log("Mengirim pesan:", pesan);
+  
+  tampilkanPesan(pesan, 'user');
+  input.value = '';
+  
+  sendBtn.disabled = true;
+  sendBtn.textContent = '...';
+  
+  chatHistory.push({ role: 'user', text: pesan });
+  
+  // Tampilkan indikator berpikir
+  const thinkingId = tampilkanPesanSedangBerpikir();
+  
+  // Gunakan GET untuk menghindari CORS preflight
+  const url = new URL(APPS_SCRIPT_URL);
+  url.searchParams.set('action', 'chat');
+  url.searchParams.set('message', pesan);
+  url.searchParams.set('history', JSON.stringify(chatHistory.slice(-6)));
+  
+  fetch(url.toString(), { method: 'GET' })
+  .then(response => response.text())
+  .then(text => {
+    // Hapus indikator berpikir segera setelah respons diterima
+    hapusPesanSedangBerpikir(thinkingId);
+    
+    try {
+      const data = JSON.parse(text);
+      if (data.success) {
+        tampilkanPesan(data.reply, 'bot');
+        chatHistory.push({ role: 'bot', text: data.reply });
+      } else {
+        tampilkanPesan('⚠️ Error: ' + (data.error || 'Gagal memproses'), 'bot');
+      }
+    } catch (e) {
+      console.error('Parse error:', e, 'Raw text:', text);
+      tampilkanPesan('⚠️ Maaf, format respons tidak dikenali.', 'bot');
+    }
+  })
+  .catch(error => {
+    console.error('Fetch error:', error);
+    hapusPesanSedangBerpikir(thinkingId); // Pastikan dihapus juga saat error
+    tampilkanPesan('⚠️ Maaf, terjadi kesalahan koneksi.', 'bot');
+  })
+  .finally(() => {
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Kirim';
+  });
+}
+
+// Fungsi untuk convert markdown ke HTML
+function markdownToHtml(text) {
+  if (!text) return '';
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  text = text.replace(/`(.*?)`/g, '<code style="background:rgba(0,0,0,0.1);padding:2px 6px;border-radius:3px;">$1</code>');
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
+function tampilkanPesan(teks, pengirim) {
+  const chatBox = document.getElementById('chatBox');
+  const messageDiv = document.createElement('div');
+  messageDiv.className = 'message ' + pengirim;
+  messageDiv.innerHTML = markdownToHtml(teks);
+  chatBox.appendChild(messageDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Fungsi untuk menampilkan pesan "Sedang berpikir..."
+function tampilkanPesanSedangBerpikir() {
+  const chatBox = document.getElementById('chatBox');
+  const thinkingDiv = document.createElement('div');
+  thinkingDiv.className = 'message bot thinking-message';
+  thinkingDiv.id = 'thinking-' + Date.now();
+  
+  thinkingDiv.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div class="thinking-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <span style="font-style: italic; color: #666;">Sedang berpikir</span>
+    </div>
+  `;
+  
+  chatBox.appendChild(thinkingDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  return thinkingDiv.id;
+}
+
+// Fungsi untuk menghapus pesan "Sedang berpikir..."
+function hapusPesanSedangBerpikir(id) {
+  const thinkingElement = document.getElementById(id);
+  if (thinkingElement) {
+    thinkingElement.remove();
+  }
+}
