@@ -6,278 +6,42 @@
   <title>Smart Lab Chat Widget</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: transparent;
-      height: 100vh;
-      overflow: hidden;
-    }
-    
-    /* Tombol Chat Floating */
-    .chat-button {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #1a73e8 0%, #0d5bb5 100%);
-      color: white;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(26,115,232,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      transition: all 0.3s ease;
-      z-index: 1000;
-    }
-    
-    .chat-button:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 25px rgba(26,115,232,0.6);
-    }
-    
-    .chat-button.hidden {
-      display: none;
-    }
-    
-    /* Container Chat Widget */
-    .chat-widget {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 380px;
-      height: calc(100vh - 100px);
-      max-height: 650px;
-      min-height: 400px;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      transition: all 0.3s ease;
-      z-index: 1000;
-    }
-    
-    .chat-widget.minimized {
-      width: 0;
-      height: 0;
-      opacity: 0;
-      pointer-events: none;
-    }
-    
-    /* Header Widget */
-    .widget-header {
-      background: linear-gradient(135deg, #1a73e8 0%, #0d5bb5 100%);
-      color: white;
-      padding: 15px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .widget-header h3 {
-      font-size: 16px;
-      font-weight: 600;
-    }
-    
-    .widget-header p {
-      font-size: 12px;
-      opacity: 0.9;
-      margin-top: 2px;
-    }
-    
-    .minimize-btn {
-      background: rgba(255,255,255,0.2);
-      border: none;
-      color: white;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-    }
-    
-    .minimize-btn:hover {
-      background: rgba(255,255,255,0.3);
-    }
-    
-    /* Chat Box */
-    .chat-box {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      background: #f8f9fa;
-      min-height: 200px;
-    }
-    
-    .message {
-      margin-bottom: 15px;
-      padding: 12px 16px;
-      border-radius: 12px;
-      max-width: 85%;
-      word-wrap: break-word;
-      animation: fadeIn 0.3s ease;
-      line-height: 1.5;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .message.user {
-      background: #1a73e8;
-      color: white;
-      margin-left: auto;
-    }
-    
-    .message.bot {
-      background: white;
-      border: 1px solid #ddd;
-    }
-    
-    /* Styling untuk teks bold */
-    .message strong {
-      font-weight: 700;
-      color: inherit;
-    }
-    
-    /* Styling untuk teks italic */
-    .message em {
-      font-style: italic;
-    }
-    
-    /* Styling untuk code */
-    .message code {
-      background: rgba(0,0,0,0.1);
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9em;
-    }
-    
-    .message.bot code {
-      background: rgba(0,0,0,0.05);
-    }
-    
-    .message.user code {
-      background: rgba(255,255,255,0.2);
-    }
-
-    /* === BARU: Styling untuk pesan "Sedang berpikir" === */
-    .thinking-message {
-      background: white;
-      border: 1px solid #ddd;
-      opacity: 0.8;
-    }
-
-    .thinking-dots {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-    }
-
-    .thinking-dots span {
-      width: 8px;
-      height: 8px;
-      background: #1a73e8;
-      border-radius: 50%;
-      display: inline-block;
-      animation: bounce 1.4s infinite ease-in-out both;
-    }
-
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: transparent; height: 100vh; overflow: hidden; }
+    .chat-button { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #1a73e8 0%, #0d5bb5 100%); color: white; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(26,115,232,0.4); display: flex; align-items: center; justify-content: center; font-size: 28px; transition: all 0.3s ease; z-index: 1000; }
+    .chat-button:hover { transform: scale(1.1); box-shadow: 0 6px 25px rgba(26,115,232,0.6); }
+    .chat-button.hidden { display: none; }
+    .chat-widget { position: fixed; bottom: 20px; right: 20px; width: 380px; height: calc(100vh - 100px); max-height: 650px; min-height: 400px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; transition: all 0.3s ease; z-index: 1000; }
+    .chat-widget.minimized { width: 0; height: 0; opacity: 0; pointer-events: none; }
+    .widget-header { background: linear-gradient(135deg, #1a73e8 0%, #0d5bb5 100%); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .widget-header h3 { font-size: 16px; font-weight: 600; }
+    .widget-header p { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+    .minimize-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
+    .minimize-btn:hover { background: rgba(255,255,255,0.3); }
+    .chat-box { flex: 1; overflow-y: auto; padding: 20px; background: #f8f9fa; min-height: 200px; }
+    .message { margin-bottom: 15px; padding: 12px 16px; border-radius: 12px; max-width: 85%; word-wrap: break-word; animation: fadeIn 0.3s ease; line-height: 1.5; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .message.user { background: #1a73e8; color: white; margin-left: auto; }
+    .message.bot { background: white; border: 1px solid #ddd; }
+    .thinking-message { background: white; border: 1px solid #ddd; opacity: 0.8; }
+    .thinking-dots { display: flex; gap: 4px; align-items: center; }
+    .thinking-dots span { width: 8px; height: 8px; background: #1a73e8; border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out both; }
     .thinking-dots span:nth-child(1) { animation-delay: -0.32s; }
     .thinking-dots span:nth-child(2) { animation-delay: -0.16s; }
-
-    @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1); }
-    }
-    
-    /* Input Area */
-    .input-area {
-      padding: 15px;
-      border-top: 1px solid #ddd;
-      display: flex;
-      gap: 10px;
-      background: white;
-    }
-    
-    .input-area input {
-      flex: 1;
-      padding: 10px 14px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
-      outline: none;
-    }
-    
-    .input-area input:focus {
-      border-color: #1a73e8;
-    }
-    
-    .input-area button {
-      padding: 10px 18px;
-      background: #1a73e8;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-      transition: all 0.3s ease;
-    }
-    
-    .input-area button:hover {
-      background: #0d5bb5;
-    }
-    
-    .input-area button:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-    
-    /* Welcome Message */
-    .welcome-msg {
-      background: white;
-      border: 1px solid #ddd;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-    }
-    
-    .welcome-msg strong {
-      color: #1a73e8;
-    }
-    
-    /* Responsive */
-    @media (max-width: 480px) {
-      .chat-widget {
-        width: 100%;
-        height: 100%;
-        bottom: 0;
-        right: 0;
-        border-radius: 0;
-      }
-    }
+    @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+    .input-area { padding: 15px; border-top: 1px solid #ddd; display: flex; gap: 10px; background: white; }
+    .input-area input { flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+    .input-area input:focus { border-color: #1a73e8; }
+    .input-area button { padding: 10px 18px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s ease; }
+    .input-area button:hover { background: #0d5bb5; }
+    .input-area button:disabled { background: #ccc; cursor: not-allowed; }
+    .welcome-msg { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+    .welcome-msg strong { color: #1a73e8; }
+    @media (max-width: 480px) { .chat-widget { width: 100%; height: 100%; bottom: 0; right: 0; border-radius: 0; } }
   </style>
 </head>
 <body>
-  <!-- Tombol Chat Floating -->
-  <button class="chat-button" id="chatButton" onclick="toggleChat()">
-    💬
-  </button>
+  <button class="chat-button" id="chatButton" onclick="toggleChat()">💬</button>
   
-  <!-- Widget Chat -->
   <div class="chat-widget minimized" id="chatWidget">
     <div class="widget-header">
       <div>
@@ -292,7 +56,7 @@
         <strong>Halo! 👋</strong><br><br>
         Saya asisten virtual Smart Lab.<br>
         Departemen Teknik Material dan Metalurgi<br>
-        Silahkan bertanya tentang fasilitas pengujian yang kami miliki.
+        Silakan bertanya tentang fasilitas pengujian yang kami miliki.
       </div>
     </div>
     
@@ -307,13 +71,10 @@
     let chatHistory = [];
     let isChatOpen = false;
     
-    // Toggle minimize/maximize
     function toggleChat() {
       const widget = document.getElementById('chatWidget');
       const button = document.getElementById('chatButton');
-      
       isChatOpen = !isChatOpen;
-      
       if (isChatOpen) {
         widget.classList.remove('minimized');
         button.classList.add('hidden');
@@ -324,12 +85,9 @@
     }
     
     function handleEnter(event) {
-      if (event.key === 'Enter') {
-        kirimPesan();
-      }
+      if (event.key === 'Enter') kirimPesan();
     }
 
-    // Fungsi untuk convert markdown ke HTML
     function markdownToHtml(text) {
       if (!text) return '';
       text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -339,36 +97,20 @@
       return text;
     }
     
-    // === BARU: Fungsi untuk menampilkan pesan "Sedang berpikir..." ===
     function tampilkanPesanSedangBerpikir() {
       const chatBox = document.getElementById('chatBox');
       const thinkingDiv = document.createElement('div');
       thinkingDiv.className = 'message bot thinking-message';
       thinkingDiv.id = 'thinking-' + Date.now();
-      
-      thinkingDiv.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <div class="thinking-dots">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <span style="font-style: italic; color: #666;">Sedang berpikir</span>
-        </div>
-      `;
-      
+      thinkingDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 8px;"><div class="thinking-dots"><span></span><span></span><span></span></div><span style="font-style: italic; color: #666;">Sedang berpikir</span></div>`;
       chatBox.appendChild(thinkingDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
-      
       return thinkingDiv.id;
     }
 
-    // === BARU: Fungsi untuk menghapus pesan "Sedang berpikir..." ===
     function hapusPesanSedangBerpikir(id) {
       const thinkingElement = document.getElementById(id);
-      if (thinkingElement) {
-        thinkingElement.remove();
-      }
+      if (thinkingElement) thinkingElement.remove();
     }
     
     function kirimPesan() {
@@ -378,32 +120,32 @@
       
       if (!pesan) return;
       
-      console.log("Mengirim pesan:", pesan);
-      
       tampilkanPesan(pesan, 'user');
       input.value = '';
-      
       sendBtn.disabled = true;
       sendBtn.textContent = '...';
       
       chatHistory.push({ role: 'user', text: pesan });
-      
-      // Tampilkan indikator berpikir
       const thinkingId = tampilkanPesanSedangBerpikir();
       
-      const url = new URL(APPS_SCRIPT_URL);
-      url.searchParams.set('action', 'chat');
-      url.searchParams.set('message', pesan);
-      url.searchParams.set('history', JSON.stringify(chatHistory.slice(-6)));
+      // PERBAIKAN: Ambil email dari localStorage, gunakan POST, dan Content-Type text/plain
+      const userEmail = localStorage.getItem('user_email') || 'guest@smartlab.its.ac.id';
       
-      fetch(url.toString(), {
-        method: 'GET'
+      fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify({
+          action: 'chat',
+          email: userEmail,
+          message: pesan,
+          history: chatHistory.slice(-6)
+        })
       })
       .then(response => response.text())
       .then(text => {
-        // Hapus indikator berpikir segera setelah respons diterima
         hapusPesanSedangBerpikir(thinkingId);
-        
         try {
           const data = JSON.parse(text);
           if (data.success) {
@@ -419,7 +161,7 @@
       })
       .catch(error => {
         console.error('Fetch error:', error);
-        hapusPesanSedangBerpikir(thinkingId); // Pastikan dihapus juga saat error
+        hapusPesanSedangBerpikir(thinkingId);
         tampilkanPesan('⚠️ Maaf, terjadi kesalahan koneksi.', 'bot');
       })
       .finally(() => {
@@ -437,11 +179,8 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     }
     
-    // Auto-open chat setelah 2 detik
     setTimeout(() => {
-      if (!isChatOpen) {
-        toggleChat();
-      }
+      if (!isChatOpen) toggleChat();
     }, 2000);
   </script>
 </body>
