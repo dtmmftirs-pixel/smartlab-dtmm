@@ -238,7 +238,7 @@
       font-size: 13px;
       margin-bottom: 15px;
       transition: background 0.3s;
-      text-decoration: none; /* Ditambahkan agar link terlihat seperti tombol */
+      text-decoration: none; 
     }
     .btn-back:hover { background: #444; }
     
@@ -282,8 +282,8 @@
 
       <!-- === Container View Status Pengujian === -->
       <div id="statusView" style="display: none;">
-        <!-- DIMODIFIKASI: Mengubah button menjadi link ke halaman home -->
-        <a href="https://sites.google.com/view/smartlab-dtmmits/home" class="btn-back">← Kembali ke Menu Utama</a>
+        <!-- DIMODIFIKASI: target="_top" memaksa browser membuka link di window utama, keluar dari iframe -->
+        <a href="https://sites.google.com/view/smartlab-dtmmits/home" target="_top" class="btn-back">← Kembali ke Menu Utama</a>
         <h2 id="statusViewTitle">Status Pengujian Anda</h2>
         <p id="statusViewDesc" style="color: #666; font-size: 13px; margin-bottom: 10px;">Berikut adalah riwayat pengujian yang terdaftar atas nama Anda:</p>
         
@@ -324,13 +324,12 @@
         { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
       ],
       'Staff': [
-        // DIMODIFIKASI: Mengubah action menjadi link ke Mon-Pengujian di tab yang sama (_self)
+        // DIMODIFIKASI: Menggunakan link ke Google Sites
         { title: '📝 Status Pengujian', desc: 'Kelola dan update progres sampel pengujian', link: 'https://sites.google.com/view/smartlab-dtmmits/Mon-Pengujian', openInNewTab: false },
         { title: '📊 Monitoring Pengujian', desc: 'Pantau proses pengujian yang sedang aktif', action: 'comingSoon' },
         { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', action: 'comingSoon' },
         { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
       ],
-      // === MODIFIKASI: Ganti key 'Users' menjadi 'User' ===
       'User': [
         { 
           title: '📝 Daftar Pengujian', 
@@ -338,7 +337,7 @@
           link: 'https://forms.gle/Ci3s32NdwZrKcWEX9',
           openInNewTab: true
         },
-        // DIMODIFIKASI: Mengubah action menjadi link ke Mon-Pengujian di tab yang sama (_self)
+        // DIMODIFIKASI: Menggunakan link ke Google Sites
         { 
           title: '📊 Status Pengujian', 
           desc: 'Cek progres dan hasil sampel pengujian Anda', 
@@ -351,7 +350,6 @@
 
     // 6. Fungsi render menu
     function renderMenus(role) {
-      // === MODIFIKASI: Normalisasi role ===
       if (role !== 'Staff' && role !== 'Manajemen') {
         role = 'User';
       }
@@ -383,8 +381,12 @@
             if (menu.openInNewTab) {
               window.open(menu.link, '_blank', 'noopener,noreferrer');
             } else {
-              // Ini akan membuka link di tab yang sama (_self)
-              window.location.href = menu.link;
+              // DIMODIFIKASI: window.top.location.href memaksa navigasi di window utama (keluar dari iframe)
+              if (window.top !== window.self) {
+                window.top.location.href = menu.link;
+              } else {
+                window.location.href = menu.link;
+              }
             }
           }
         });
@@ -435,21 +437,19 @@
               return;
             }
             
-            // === MODIFIKASI: Bangun Tabel HTML dengan fitur edit ===
             let html = '<div class="status-table-container"><table class="status-table"><thead><tr>';
             
             data.headers.forEach((header, colIndex) => {
               html += `<th>${header}</th>`;
             });
             
-            // Tambah kolom Aksi khusus Staff/Manajemen
             if (currentUserRole === 'Manajemen' || currentUserRole === 'Staff') {
               html += '<th>Aksi</th>';
             }
             html += '</tr></thead><tbody>';
             
             data.data.forEach((row, rowIndex) => {
-              const sheetRowIndex = rowIndex + 2; // Index baris di Google Sheet (1-based, +1 untuk header)
+              const sheetRowIndex = rowIndex + 2;
               html += `<tr data-row="${sheetRowIndex}">`;
               
               row.forEach((cell, colIndex) => {
@@ -460,7 +460,6 @@
                   displayValue = new Date(cell).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                 }
                 
-                // Tentukan kolom yang bisa diedit (misal: kolom yang namanya mengandung 'status' atau kolom ke-5)
                 const headerName = data.headers[colIndex] ? data.headers[colIndex].toLowerCase() : '';
                 const isEditable = (currentUserRole === 'Manajemen' || currentUserRole === 'Staff') && (headerName.includes('status') || sheetColIndex === 5);
                 
@@ -508,7 +507,6 @@
       
       cell.classList.add('editing');
       
-      // Opsi untuk combobox status
       const options = ['Pending', 'Dalam Proses', 'Selesai', 'Dibatalkan', 'Menunggu Pembayaran', 'Lunas', 'Sampel Diterima', 'Sampel Diambil'];
       
       let selectHTML = `<select class="status-combobox" onchange="updateCell(this, ${row}, ${col})">`;
@@ -516,7 +514,6 @@
         const selected = (opt.toLowerCase() === currentValue.toString().toLowerCase()) ? 'selected' : '';
         selectHTML += `<option value="${opt}" ${selected}>${opt}</option>`;
       });
-      // Tambahkan nilai saat ini jika tidak ada di dalam opsi
       if (!options.some(opt => opt.toLowerCase() === currentValue.toString().toLowerCase()) && currentValue) {
          selectHTML += `<option value="${currentValue}" selected>${currentValue}</option>`;
       }
@@ -524,7 +521,6 @@
       
       cell.innerHTML = selectHTML;
       
-      // Aktifkan tombol simpan di baris ini
       const tr = cell.closest('tr');
       const saveBtn = tr.querySelector('.save-btn');
       if (saveBtn) {
@@ -540,7 +536,6 @@
       cell.classList.remove('editing');
       cell.innerHTML = `${newValue} <span style="font-size:10px; color:#28a745; display:block;">✓ Berubah</span>`;
       
-      // Highlight baris
       cell.closest('tr').style.background = '#fff3cd';
     }
 
@@ -564,7 +559,7 @@
       
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // text/plain lebih aman untuk menghindari CORS preflight di Apps Script
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'updateStatus',
           rowIndex: parseInt(rowIndex),
@@ -580,7 +575,6 @@
           tr.style.background = '#d4edda';
           setTimeout(() => { tr.style.background = ''; }, 2000);
           
-          // Kembalikan tampilan cell ke teks biasa
           editableCells.forEach(cell => {
              cell.innerHTML = cell.getAttribute('data-value');
           });
@@ -600,7 +594,6 @@
     }
 
     // === Fungsi Kembali ke Menu Utama ===
-    // (Fungsi ini tetap ada agar tidak error, meski sekarang tombolnya sudah diganti menjadi tag <a>)
     function showMainMenu() {
       document.getElementById('statusView').style.display = 'none';
       document.getElementById('menuGrid').style.display = 'grid';
