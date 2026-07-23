@@ -117,7 +117,7 @@
       background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
       padding: 20px;
       border-radius: 12px;
-      text-decoration: none;
+      text-decoration: none; /* Penting agar <a> tidak bergaris bawah */
       color: #1a73e8;
       transition: all 0.3s ease;
       border: 2px solid transparent;
@@ -275,8 +275,7 @@
       </div>
 
       <div id="statusView" style="display: none;">
-        <!-- DIMODIFIKASI: target="_blank" agar aman dari blokir sandbox iframe -->
-        <a href="https://sites.google.com/view/smartlab-dtmmits/home" target="_blank" class="btn-back">← Kembali ke Menu Utama</a>
+        <a href="https://sites.google.com/view/smartlab-dtmmits/home" target="_top" class="btn-back">← Kembali ke Menu Utama</a>
         <h2 id="statusViewTitle">Status Pengujian Anda</h2>
         <p id="statusViewDesc" style="color: #666; font-size: 13px; margin-bottom: 10px;">Berikut adalah riwayat pengujian yang terdaftar atas nama Anda:</p>
         
@@ -288,43 +287,47 @@
   </div>
 
   <script>
+    // 1. Cek sesi
     if (localStorage.getItem('isLoggedIn') !== 'true') {
       window.location.replace('index.html');
     }
     
+    // 2. Ambil data user
     const name = localStorage.getItem('user_name') || 'Pengguna';
     const email = localStorage.getItem('user_email') || '';
     
     let currentUserRole = 'User';
     
+    // 3. Tampilkan data di Header
     document.getElementById('userName').textContent = name;
     document.getElementById('userEmail').textContent = email;
     
+    // 4. Tampilkan pesan Selamat Datang
     const welcomeMessage = `Selamat Datang <strong>${name}</strong> di Smart Lab DTMM, apabila ada pertanyaan silahkan kontak <strong>Cak Mamet</strong>`;
     document.getElementById('welcomeText').innerHTML = welcomeMessage;
     
+    // 5. Definisi Menu berdasarkan Role (DIMODIFIKASI: Semua menggunakan 'link' dan 'isComingSoon')
     const menuData = {
       'Manajemen': [
-        { title: '📊 Monitoring Pengujian', desc: 'Pantau seluruh proses pengujian yang berjalan', action: 'comingSoon' },
+        { title: '📊 Monitoring Pengujian', desc: 'Pantau seluruh proses pengujian yang berjalan', link: '#', isComingSoon: true },
         { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', link: 'https://sites.google.com/view/smartlab-dtmmits/home', openInNewTab: false },
-        { title: '💰 Rekap Keuangan', desc: 'Laporan pendapatan dan biaya operasional lab', action: 'comingSoon' },
-        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
+        { title: '💰 Rekap Keuangan', desc: 'Laporan pendapatan dan biaya operasional lab', link: '#', isComingSoon: true },
+        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', link: '#', isComingSoon: true }
       ],
       'Staff': [
-        // DIMODIFIKASI: openInNewTab diatur true agar menggunakan window.open
         { title: '📝 Status Pengujian', desc: 'Kelola dan update progres sampel pengujian', link: 'https://sites.google.com/view/smartlab-dtmmits/mon-pengujian', openInNewTab: false },
-        { title: '📊 Monitoring Pengujian', desc: 'Pantau proses pengujian yang sedang aktif', action: 'comingSoon' },
+        { title: '📊 Monitoring Pengujian', desc: 'Pantau proses pengujian yang sedang aktif', link: '#', isComingSoon: true },
         { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', link: 'https://sites.google.com/view/smartlab-dtmmits/home', openInNewTab: false },
-        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
+        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', link: '#', isComingSoon: true }
       ],
       'User': [
-        { title: '📝 Daftar Pengujian', desc: 'Ajukan permohonan pengujian material baru', link: 'https://forms.gle/Ci3s32NdwZrKcWEX9',openInNewTab: true },
-        // DIMODIFIKASI: openInNewTab diatur true agar menggunakan window.open
-        { title: '📊 Status Pengujian', desc: 'Cek progres dan hasil sampel pengujian Anda', link: 'https://sites.google.com/view/smartlab-dtmmits/mon-pengujian',openInNewTab: false },
-        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
+        { title: '📝 Daftar Pengujian', desc: 'Ajukan permohonan pengujian material baru', link: 'https://forms.gle/Ci3s32NdwZrKcWEX9', openInNewTab: true },
+        { title: '📊 Status Pengujian', desc: 'Cek progres dan hasil sampel pengujian Anda', link: 'https://sites.google.com/view/smartlab-dtmmits/mon-pengujian', openInNewTab: false },
+        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', link: '#', isComingSoon: true }
       ]
     };
 
+    // 6. Fungsi render menu (DIMODIFIKASI: Selalu merender elemen <a>)
     function renderMenus(role) {
       if (role !== 'Staff' && role !== 'Manajemen') {
         role = 'User';
@@ -342,27 +345,33 @@
       menuGrid.innerHTML = '';
       
       menus.forEach(menu => {
-        const card = document.createElement('div');
+        // DIMODIFIKASI: Selalu menggunakan elemen <a> agar menjadi link HTML yang proper
+        const card = document.createElement('a');
         card.className = 'menu-card';
-        card.innerHTML = `<h3>${menu.title}</h3><p>${menu.desc}</p>`;
         
-        card.addEventListener('click', function(e) {
-          e.preventDefault();
-          
-          if (menu.action === 'loadStatusPengujian') {
-            loadStatusPengujian();
-          } else if (menu.action === 'comingSoon') {
+        if (menu.isComingSoon) {
+          card.href = '#';
+          card.onclick = function(e) {
+            e.preventDefault();
             alert('Fitur ini sedang dalam pengembangan (Coming Soon).');
-          } else if (menu.link && menu.link !== '#') {
-            // DIMODIFIKASI: Selalu gunakan window.open dengan _blank untuk menghindari error sandbox iframe Google Sites
-            window.open(menu.link, '_blank', 'noopener,noreferrer');
+          };
+        } else {
+          card.href = menu.link;
+          // _top memaksa link membuka di window utama (keluar dari iframe Google Sites)
+          // _blank membuka di tab baru
+          card.target = menu.openInNewTab ? '_blank' : '_top';
+          
+          if (menu.openInNewTab) {
+            card.rel = 'noopener noreferrer';
           }
-        });
+        }
         
+        card.innerHTML = `<h3>${menu.title}</h3><p>${menu.desc}</p>`;
         menuGrid.appendChild(card);
       });
     }
 
+    // === Fungsi Load Status Pengujian ===
     function loadStatusPengujian() {
       document.getElementById('menuGrid').style.display = 'none';
       document.getElementById('menuHeader').style.display = 'none';
@@ -464,6 +473,7 @@
         });
     }
 
+    // === FUNGSI BARU: Enable Edit Cell ===
     function enableEdit(cell) {
       if (cell.classList.contains('editing')) return;
       
@@ -494,6 +504,7 @@
       }
     }
 
+    // === FUNGSI BARU: Update Nilai Cell Sementara ===
     function updateCell(select, row, col) {
       const newValue = select.value;
       const cell = select.parentElement;
@@ -504,6 +515,7 @@
       cell.closest('tr').style.background = '#fff3cd';
     }
 
+    // === FUNGSI BARU: Simpan Perubahan ke Google Sheet ===
     function saveRow(rowIndex) {
       const tr = document.querySelector(`tr[data-row="${rowIndex}"]`);
       if (!tr) return;
@@ -557,6 +569,7 @@
       });
     }
 
+    // === Fungsi Kembali ke Menu Utama ===
     function showMainMenu() {
       document.getElementById('statusView').style.display = 'none';
       document.getElementById('menuGrid').style.display = 'grid';
@@ -564,6 +577,7 @@
       document.getElementById('welcomeBanner').style.display = 'flex';
     }
     
+    // 7. Fetch Role dari Apps Script saat load
     if (email) {
       const fetchUrl = `${APPS_SCRIPT_URL}?action=getRole&email=${encodeURIComponent(email)}`;
       fetch(fetchUrl)
@@ -583,6 +597,7 @@
       renderMenus('User');
     }
     
+    // 8. Fungsi logout
     function prosesLogout() {
       localStorage.clear();
       window.location.replace('index.html');
