@@ -176,80 +176,99 @@
 
   <!-- Opsional: Jika config.js sudah berisi SCRIPT_URL, Anda bisa menghapus baris const di bawah -->
   <script src="config.js"></script>
-  
+  <script src="config.js"></script>
   <script>
-    // ⚠️ PENTING: Ganti dengan URL Deployment Web App Google Apps Script Anda
-    // Jika URL sudah didefinisikan di config.js, hapus atau comment baris ini.
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx...GANTI_DENGAN_URL_ANDA.../exec';
-
-    // Fungsi untuk decode JWT Google dengan aman (mendukung karakter UTF-8 / Base64URL)
     function parseJwt(token) {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-          })
-          .join('')
+        atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join('')
       );
       return JSON.parse(jsonPayload);
     }
 
     function handleLogin(response) {
       try {
-        // 1. Decode payload untuk mendapatkan data user secara aman
         const payload = parseJwt(response.credential);
         const email = payload.email || 'Email tidak tersedia';
         const name = payload.name || 'Pengguna';
         
-        // 2. Simpan data dasar user ke localStorage
-        localStorage.setItem('g_token', response.credential);
+        console.log('=== LOGIN DEBUG ===');
+        console.log('Email:', email);
+        console.log('Name:', name);
+        console.log('API_URL:', typeof API_URL);
+        
+        // Simpan data dasar
         localStorage.setItem('user_email', email);
         localStorage.setItem('user_name', name);
         localStorage.setItem('isLoggedIn', 'true');
         
-        // 3. Tampilkan loading overlay
+        // Tampilkan loading
         document.getElementById('loadingOverlay').style.display = 'flex';
         
-        // 4. Fetch role dan menu dari Google Apps Script
-        fetch(`${SCRIPT_URL}?action=getUserRole&email=${encodeURIComponent(email)}`)
-          .then(res => res.json())
+        // Cek apakah API_URL tersedia
+        if (typeof API_URL === 'undefined' || !API_URL || API_URL.includes('GANTI_DENGAN_URL')) {
+          console.error('API_URL tidak valid! Silakan update config.js');
+          alert('Konfigurasi sistem belum lengkap. Hubungi administrator.');
+          document.getElementById('loadingOverlay').style.display = 'none';
+          return;
+        }
+        
+        // Fetch role dan menu dari Google Apps Script
+        const fetchUrl = `${API_URL}?action=getUserRole&email=${encodeURIComponent(email)}`;
+        console.log('Fetching:', fetchUrl);
+        
+        fetch(fetchUrl)
+          .then(res => {
+            console.log('Response status:', res.status);
+            return res.json();
+          })
           .then(data => {
+            console.log('=== ROLE DEBUG ===');
+            console.log('Response data:', data);
+            
             if (data.success) {
-              // Simpan role dan menu yang didapat dari backend
+              console.log('User role:', data.user.role);
+              console.log('Menus:', data.menus);
+              
               localStorage.setItem('user_role', data.user.role);
               localStorage.setItem('user_menus', JSON.stringify(data.menus));
+              localStorage.setItem('user_nama_lengkap', data.user.nama);
             } else {
-              // Fallback jika user tidak ditemukan di sheet (anggap sebagai 'users' biasa)
-              console.warn("User tidak ditemukan di sheet, menggunakan role default.");
+              console.warn('User tidak ditemukan, menggunakan role default');
               localStorage.setItem('user_role', 'users');
+              localStorage.setItem('user_menus', JSON.stringify([
+                { name: 'Daftar Pengujian', icon: '📋', link: 'daftar-pengujian.html' },
+                { name: 'Status Pengujian', icon: '📝', link: 'status-pengujian.html' },
+                { name: 'Katalog Lab', icon: '', link: 'katalog.html' }
+              ]));
             }
             
-            // 5. Redirect ke dashboard setelah data tersimpan
             window.location.href = 'dashboard.html';
           })
           .catch(err => {
-            console.error("Gagal menghubungi server untuk verifikasi role:", err);
-            // Fallback aman agar user tidak terjebak di halaman login
+            console.error('=== FETCH ERROR ===');
+            console.error('Error:', err);
+            alert('Gagal menghubungi server. Periksa koneksi internet atau hubungi admin.');
             localStorage.setItem('user_role', 'users');
             window.location.href = 'dashboard.html';
           });
         
       } catch (error) {
-        console.error("Gagal memproses login:", error);
-        alert("Terjadi kesalahan saat memproses login. Silakan coba lagi.");
+        console.error('Login error:', error);
+        alert('Terjadi kesalahan saat login: ' + error.message);
         document.getElementById('loadingOverlay').style.display = 'none';
       }
     }
     
     window.onload = function() {
-      // Cek apakah user sudah login sebelumnya berdasarkan flag isLoggedIn
       if (localStorage.getItem('isLoggedIn') === 'true') {
+        console.log('User sudah login, redirect ke dashboard');
         window.location.href = 'dashboard.html';
       }
     };
-  </script>
+  </script>  
 </body>
 </html>
