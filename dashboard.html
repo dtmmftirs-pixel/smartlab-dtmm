@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Lab - Dashboard</title>
-  <!-- Memuat config.js agar variabel APPS_SCRIPT_URL tersedia -->
   <script src="config.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -146,7 +145,7 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
-      min-width: 600px;
+      min-width: 800px;
     }
     .status-table th {
       background: #1a73e8;
@@ -161,6 +160,49 @@
       background: white;
     }
     .status-table tr:last-child td { border-bottom: none; }
+    
+    /* === EDITABLE CELLS === */
+    .editable-cell {
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .editable-cell:hover {
+      background: #fff3cd !important;
+      outline: 2px dashed #ffc107;
+    }
+    
+    .editable-cell select {
+      width: 100%;
+      padding: 6px;
+      border: 2px solid #1a73e8;
+      border-radius: 4px;
+      font-size: 13px;
+      background: white;
+      cursor: pointer;
+    }
+    
+    .save-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    
+    .save-btn:hover { background: #218838; }
+    .save-btn:disabled { background: #ccc; cursor: not-allowed; }
+    
+    .edit-hint {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+      font-style: italic;
+    }
     
     .btn-back {
       display: inline-flex;
@@ -199,73 +241,58 @@
     </div>
     
     <div class="content">
-      <!-- Banner Selamat Datang -->
       <div class="welcome-banner" id="welcomeBanner">
         <span class="icon">👋</span>
         <span id="welcomeText">Memuat data pengguna...</span>
       </div>
 
-      <!-- Header Menu Utama (Dibungkus div agar bisa disembunyikan) -->
       <div id="menuHeader">
         <h2>Menu Utama <span id="roleBadge" class="role-badge" style="display:none;">Loading...</span></h2>
         <p style="color: #666; font-size: 13px;">Pilih menu yang ingin diakses:</p>
       </div>
       
-      <!-- Container Menu Utama -->
       <div id="menuGrid" class="menu-grid">
         <div class="loading-menus">Sedang memuat menu sesuai hak akses...</div>
       </div>
 
-      <!-- === Container View Status Pengujian (Hidden by default) === -->
       <div id="statusView" style="display: none;">
         <button class="btn-back" onclick="showMainMenu()">← Kembali ke Menu Utama</button>
-        <!-- ID ditambahkan agar teks bisa diubah dinamis oleh JS -->
         <h2 id="statusViewTitle">Status Pengujian Anda</h2>
         <p id="statusViewDesc" style="color: #666; font-size: 13px; margin-bottom: 10px;">Berikut adalah riwayat pengujian yang terdaftar atas nama Anda:</p>
         
-        <div id="statusTableContainer">
-          <!-- Tabel akan di-generate di sini oleh JavaScript -->
-        </div>
+        <div id="statusTableContainer"></div>
       </div>
     </div>
   </div>
 
   <script>
-    // 1. Cek sesi
     if (localStorage.getItem('isLoggedIn') !== 'true') {
       window.location.replace('index.html');
     }
     
-    // 2. Ambil data user
     const name = localStorage.getItem('user_name') || 'Pengguna';
     const email = localStorage.getItem('user_email') || '';
-    
-    // === MODIFIKASI: Default role menjadi 'User' (singular) ===
     let currentUserRole = 'User';
     
-    // 3. Tampilkan data di Header
     document.getElementById('userName').textContent = name;
     document.getElementById('userEmail').textContent = email;
     
-    // 4. Tampilkan pesan Selamat Datang
     const welcomeMessage = `Selamat Datang <strong>${name}</strong> di Smart Lab DTMM, apabila ada pertanyaan silahkan kontak <strong>Cak Mamet</strong>`;
     document.getElementById('welcomeText').innerHTML = welcomeMessage;
     
-    // 5. Definisi Menu berdasarkan Role
     const menuData = {
       'Manajemen': [
         { title: '📊 Monitoring Pengujian', desc: 'Pantau seluruh proses pengujian yang berjalan', action: 'comingSoon' },
-        { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', action: 'comingSoon' },
+        { title: ' Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', action: 'comingSoon' },
         { title: '💰 Rekap Keuangan', desc: 'Laporan pendapatan dan biaya operasional lab', action: 'comingSoon' },
-        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
+        { title: ' Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
       ],
       'Staff': [
         { title: '📝 Status Pengujian', desc: 'Kelola dan update progres sampel pengujian', action: 'loadStatusPengujian' },
         { title: '📊 Monitoring Pengujian', desc: 'Pantau proses pengujian yang sedang aktif', action: 'comingSoon' },
-        { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', action: 'comingSoon' },
+        { title: ' Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', action: 'comingSoon' },
         { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
       ],
-      // === MODIFIKASI: Ganti key 'Users' menjadi 'User' ===
       'User': [
         { 
           title: '📝 Daftar Pengujian', 
@@ -282,20 +309,16 @@
       ]
     };
 
-    // 6. Fungsi render menu
     function renderMenus(role) {
-      // === MODIFIKASI: Normalisasi role. Jika bukan Staff atau Manajemen, maka User ===
       if (role !== 'Staff' && role !== 'Manajemen') {
         role = 'User';
       }
       
-      // Simpan role ke variabel global
       currentUserRole = role;
       
       const menuGrid = document.getElementById('menuGrid');
       const roleBadge = document.getElementById('roleBadge');
       
-      // Tampilkan role badge (sekarang pasti 'Staff', 'Manajemen', atau 'User')
       roleBadge.textContent = role;
       roleBadge.style.display = 'inline-block';
       
@@ -327,17 +350,13 @@
       });
     }
 
-    // === Fungsi Load Status Pengujian ===
     function loadStatusPengujian() {
-      // Sembunyikan menu, header menu, dan banner selamat datang
       document.getElementById('menuGrid').style.display = 'none';
       document.getElementById('menuHeader').style.display = 'none';
       document.getElementById('welcomeBanner').style.display = 'none';
       
-      // Tampilkan view status
       document.getElementById('statusView').style.display = 'block';
       
-      // === BARU: Ubah judul dan deskripsi berdasarkan role ===
       const statusTitle = document.getElementById('statusViewTitle');
       const statusDesc = document.getElementById('statusViewDesc');
       
@@ -352,7 +371,6 @@
       const container = document.getElementById('statusTableContainer');
       container.innerHTML = '<p style="text-align:center; padding: 30px; color: #666;">⏳ Memuat data pengujian...</p>';
       
-      // === BARU: Tambahkan parameter &role ke URL fetch ===
       const fetchUrl = `${APPS_SCRIPT_URL}?action=getStatus&email=${encodeURIComponent(email)}&role=${encodeURIComponent(currentUserRole)}`;
       
       fetch(fetchUrl)
@@ -360,44 +378,89 @@
         .then(data => {
           if (data.success) {
             if (!data.data || data.data.length === 0) {
-              // === MODIFIKASI: Cek 'User' bukan 'Users' ===
               const emptyMsg = (currentUserRole === 'User') 
                 ? 'Anda belum mengajukan pengujian atau data sedang diproses.' 
                 : 'Belum ada data pengujian yang tercatat di sistem.';
                 
               container.innerHTML = `
                 <div class="empty-state">
-                  <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+                  <div style="font-size: 40px; margin-bottom: 10px;"></div>
                   <strong>Tidak ada data ditemukan</strong><br>
                   <span style="font-size: 13px;">${emptyMsg}</span>
                 </div>`;
               return;
             }
             
-            // Bangun Tabel HTML
+            // Bangun Tabel HTML dengan fitur edit
             let html = '<div class="status-table-container"><table class="status-table"><thead><tr>';
             
-            // Header Tabel
-            data.headers.forEach(header => {
+            data.headers.forEach((header, index) => {
               html += `<th>${header}</th>`;
             });
+            
+            // Tambah kolom Aksi untuk Staff/Manajemen
+            if (currentUserRole === 'Manajemen' || currentUserRole === 'Staff') {
+              html += '<th>Aksi</th>';
+            }
             html += '</tr></thead><tbody>';
             
-            // Isi Tabel
-            data.data.forEach(row => {
-              html += '<tr>';
-              row.forEach(cell => {
-                // Format jika cell adalah objek Date dari Google Sheets
+            data.data.forEach((row, rowIndex) => {
+              const sheetRowIndex = rowIndex + 2; // +2 karena header dan Google Sheet 1-based
+              html += `<tr data-row="${sheetRowIndex}">`;
+              
+              row.forEach((cell, colIndex) => {
+                const sheetColIndex = colIndex + 1;
                 let displayValue = cell;
+                
+                // Format tanggal
                 if (cell && typeof cell === 'object' && cell.toString().includes('T')) {
-                  displayValue = new Date(cell).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                  displayValue = new Date(cell).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
                 }
-                html += `<td>${displayValue}</td>`;
+                
+                // Tentukan kolom yang bisa diedit (kolom E, F, G = Status)
+                const isEditable = (currentUserRole === 'Manajemen' || currentUserRole === 'Staff') && 
+                                   (sheetColIndex === 5 || sheetColIndex === 6 || sheetColIndex === 7);
+                
+                if (isEditable) {
+                  const headerName = data.headers[colIndex] || '';
+                  let options = [];
+                  
+                  // Tentukan options berdasarkan nama kolom
+                  if (headerName.toLowerCase().includes('terima sampel')) {
+                    options = ['Belum', 'Sudah'];
+                  } else if (headerName.toLowerCase().includes('pembayaran')) {
+                    options = ['Belum', 'Sudah', 'Lunas'];
+                  } else if (headerName.toLowerCase().includes('pengujian')) {
+                    options = ['Pending', 'Dalam Proses', 'Selesai', 'Dibatalkan'];
+                  } else {
+                    options = ['Belum', 'Sudah'];
+                  }
+                  
+                  let selectHTML = `<select class="status-select" data-row="${sheetRowIndex}" data-col="${sheetColIndex}" data-original="${cell}">`;
+                  options.forEach(opt => {
+                    const selected = (opt === cell) ? 'selected' : '';
+                    selectHTML += `<option value="${opt}" ${selected}>${opt}</option>`;
+                  });
+                  selectHTML += `</select>`;
+                  
+                  html += `<td class="editable-cell">${selectHTML}</td>`;
+                } else {
+                  html += `<td>${displayValue}</td>`;
+                }
               });
+              
+              if (currentUserRole === 'Manajemen' || currentUserRole === 'Staff') {
+                html += `<td><button class="save-btn" onclick="saveRow(${sheetRowIndex})" disabled>💾 Simpan</button></td>`;
+              }
               html += '</tr>';
             });
             
             html += '</tbody></table></div>';
+            
+            if (currentUserRole === 'Manajemen' || currentUserRole === 'Staff') {
+              html += `<div class="edit-hint">💡 <strong>Tips:</strong> Ubah nilai dropdown pada kolom status, lalu klik tombol "Simpan" untuk menyimpan perubahan ke Google Sheet.</div>`;
+            }
+            
             container.innerHTML = html;
             
           } else {
@@ -410,16 +473,85 @@
         });
     }
 
-    // === Fungsi Kembali ke Menu Utama ===
+    // === Fungsi Simpan Row ===
+    function saveRow(rowIndex) {
+      const tr = document.querySelector(`tr[data-row="${rowIndex}"]`);
+      if (!tr) return;
+      
+      const saveBtn = tr.querySelector('.save-btn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = ' Menyimpan...';
+      
+      // Kumpulkan semua perubahan di row ini
+      const selects = tr.querySelectorAll('.status-select');
+      const updates = [];
+      
+      selects.forEach(select => {
+        const col = parseInt(select.getAttribute('data-col'));
+        const newValue = select.value;
+        const originalValue = select.getAttribute('data-original');
+        
+        // Hanya update jika nilai berubah
+        if (newValue !== originalValue) {
+          updates.push({
+            col: col,
+            newValue: newValue
+          });
+        }
+      });
+      
+      if (updates.length === 0) {
+        alert('ℹ️ Tidak ada perubahan yang dilakukan');
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 Simpan';
+        return;
+      }
+      
+      // Kirim ke Apps Script
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'updateStatus',
+          rowIndex: parseInt(rowIndex),
+          updates: updates,
+          userEmail: email,
+          userRole: currentUserRole
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('✅ Data berhasil disimpan!');
+          tr.style.background = '#d4edda';
+          setTimeout(() => { tr.style.background = ''; }, 2000);
+          
+          // Update data-original
+          selects.forEach(select => {
+            select.setAttribute('data-original', select.value);
+          });
+        } else {
+          alert('❌ Gagal menyimpan: ' + data.error);
+          tr.style.background = '#f8d7da';
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert('❌ Terjadi kesalahan koneksi');
+      })
+      .finally(() => {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 Simpan';
+      });
+    }
+
     function showMainMenu() {
-      // Tampilkan kembali semua elemen yang disembunyikan
       document.getElementById('statusView').style.display = 'none';
       document.getElementById('menuGrid').style.display = 'grid';
       document.getElementById('menuHeader').style.display = 'block';
       document.getElementById('welcomeBanner').style.display = 'flex';
     }
     
-    // 7. Fetch Role dari Apps Script saat load
     if (email) {
       const fetchUrl = `${APPS_SCRIPT_URL}?action=getRole&email=${encodeURIComponent(email)}`;
       fetch(fetchUrl)
@@ -428,21 +560,17 @@
           if (data.success) {
             renderMenus(data.role);
           } else {
-            // === MODIFIKASI: Fallback ke 'User' ===
             renderMenus('User');
           }
         })
         .catch(error => {
           console.error("Error fetching role:", error);
-          // === MODIFIKASI: Fallback ke 'User' ===
           renderMenus('User');
         });
     } else {
-      // === MODIFIKASI: Fallback ke 'User' ===
       renderMenus('User');
     }
     
-    // 8. Fungsi logout
     function prosesLogout() {
       localStorage.clear();
       window.location.replace('index.html');
