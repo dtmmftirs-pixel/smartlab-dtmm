@@ -195,13 +195,14 @@
     </div>
   </div>
 
+  <script src="config.js"></script>
   <script>
     // 1. Cek sesi
     if (localStorage.getItem('isLoggedIn') !== 'true') {
       window.location.replace('index.html');
     }
     
-    // 2. Ambil data user dari localStorage
+    // 2. Ambil data user
     const name = localStorage.getItem('user_name') || 'Pengguna';
     const email = localStorage.getItem('user_email') || '';
     
@@ -213,13 +214,13 @@
     const welcomeMessage = `Selamat Datang <strong>${name}</strong> di Smart Lab DTMM, apabila ada pertanyaan silahkan kontak <strong>Cak Mamet</strong>`;
     document.getElementById('welcomeText').innerHTML = welcomeMessage;
     
-    // 5. Definisi Menu berdasarkan Role
+    // 5. Definisi Menu berdasarkan Role (Gunakan 'link' bukan 'url')
     const menuData = {
       'Manajemen': [
         { title: '📊 Monitoring Pengujian', desc: 'Pantau seluruh proses pengujian yang berjalan', link: '#' },
         { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', link: '#' },
         { title: '💰 Rekap Keuangan', desc: 'Laporan pendapatan dan biaya operasional lab', link: '#' },
-        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', link: '#' }
+        { title: ' Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', link: '#' }
       ],
       'Staff': [
         { title: '📝 Status Pengujian', desc: 'Kelola dan update progres sampel pengujian', link: '#' },
@@ -231,61 +232,68 @@
         { 
           title: '📝 Daftar Pengujian', 
           desc: 'Ajukan permohonan pengujian material baru', 
-          url: 'https://forms.gle/Ci3s32NdwZrKcWEX9',
-          forceNewTab: true // Flag khusus untuk memaksa buka tab baru
+          link: 'https://forms.gle/Ci3s32NdwZrKcWEX9',
+          openInNewTab: true
         },
         { title: '📊 Status Pengujian', desc: 'Cek progres dan hasil sampel pengujian Anda', link: '#' },
-        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', link: '#' }
+        { title: ' Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', link: '#' }
       ]
     };
 
-    // 6. Fungsi untuk merender menu ke HTML
+    // 6. Fungsi render menu
     function renderMenus(role) {
       const menuGrid = document.getElementById('menuGrid');
       const roleBadge = document.getElementById('roleBadge');
       
-      // Tampilkan badge role
       roleBadge.textContent = role;
       roleBadge.style.display = 'inline-block';
       
-      // Ambil array menu sesuai role (fallback ke 'Users' jika role tidak dikenali)
       const menus = menuData[role] || menuData['Users'];
-      
-      // Bersihkan loading text
       menuGrid.innerHTML = '';
       
-      // Generate HTML untuk setiap menu
       menus.forEach(menu => {
-        const card = document.createElement('a');
-        card.href = menu.link;
+        const card = document.createElement('div');
         card.className = 'menu-card';
+        card.style.cursor = 'pointer';
+        
         card.innerHTML = `
           <h3>${menu.title}</h3>
           <p>${menu.desc}</p>
         `;
+        
+        // Event listener untuk klik
+        card.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          if (menu.link && menu.link !== '#') {
+            // Selalu buka di tab baru untuk Google Form
+            if (menu.openInNewTab) {
+              window.open(menu.link, '_blank', 'noopener,noreferrer');
+            } else {
+              window.location.href = menu.link;
+            }
+          }
+        });
+        
         menuGrid.appendChild(card);
       });
     }
 
-    // 7. Fetch Role dari Google Apps Script
+    // 7. Fetch Role dari Apps Script
     if (email) {
-      // Pastikan APPS_SCRIPT_URL sudah didefinisikan di config.js
       const fetchUrl = `${APPS_SCRIPT_URL}?action=getRole&email=${encodeURIComponent(email)}`;
       
       fetch(fetchUrl)
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            console.log("Role pengguna:", data.role);
             renderMenus(data.role);
           } else {
-            console.warn("Gagal mendapatkan role, menggunakan default 'Users'");
             renderMenus('Users');
           }
         })
         .catch(error => {
           console.error("Error fetching role:", error);
-          // Fallback ke Users jika terjadi error jaringan
           renderMenus('Users');
         });
     } else {
