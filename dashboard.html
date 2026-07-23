@@ -283,14 +283,14 @@
     const menuData = {
       'Manajemen': [
         { title: '📊 Monitoring Pengujian', desc: 'Pantau seluruh proses pengujian yang berjalan', action: 'comingSoon' },
-        { title: ' Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', action: 'comingSoon' },
+        { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', action: 'comingSoon' },
         { title: '💰 Rekap Keuangan', desc: 'Laporan pendapatan dan biaya operasional lab', action: 'comingSoon' },
-        { title: ' Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
+        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
       ],
       'Staff': [
         { title: '📝 Status Pengujian', desc: 'Kelola dan update progres sampel pengujian', action: 'loadStatusPengujian' },
         { title: '📊 Monitoring Pengujian', desc: 'Pantau proses pengujian yang sedang aktif', action: 'comingSoon' },
-        { title: ' Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', action: 'comingSoon' },
+        { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', action: 'comingSoon' },
         { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
       ],
       'User': [
@@ -384,7 +384,7 @@
                 
               container.innerHTML = `
                 <div class="empty-state">
-                  <div style="font-size: 40px; margin-bottom: 10px;"></div>
+                  <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
                   <strong>Tidak ada data ditemukan</strong><br>
                   <span style="font-size: 13px;">${emptyMsg}</span>
                 </div>`;
@@ -406,7 +406,7 @@
             
             data.data.forEach((row, rowIndex) => {
               const sheetRowIndex = rowIndex + 2; // +2 karena header dan Google Sheet 1-based
-              html += `<tr data-row="${sheetRowIndex}">`;
+              html += `<tr data-row="${sheetRowIndex}" id="row-${sheetRowIndex}">`;
               
               row.forEach((cell, colIndex) => {
                 const sheetColIndex = colIndex + 1;
@@ -436,7 +436,11 @@
                     options = ['Belum', 'Sudah'];
                   }
                   
-                  let selectHTML = `<select class="status-select" data-row="${sheetRowIndex}" data-col="${sheetColIndex}" data-original="${cell}">`;
+                  // Escape value untuk atribut HTML agar tidak rusak jika ada tanda kutip
+                  const safeValue = String(cell).replace(/"/g, '&quot;');
+                  
+                  // === PERBAIKAN: Tambahkan onchange untuk mengaktifkan tombol simpan ===
+                  let selectHTML = `<select class="status-select" data-row="${sheetRowIndex}" data-col="${sheetColIndex}" data-original="${safeValue}" onchange="enableSaveButton(${sheetRowIndex})">`;
                   options.forEach(opt => {
                     const selected = (opt === cell) ? 'selected' : '';
                     selectHTML += `<option value="${opt}" ${selected}>${opt}</option>`;
@@ -450,7 +454,7 @@
               });
               
               if (currentUserRole === 'Manajemen' || currentUserRole === 'Staff') {
-                html += `<td><button class="save-btn" onclick="saveRow(${sheetRowIndex})" disabled>💾 Simpan</button></td>`;
+                html += `<td><button class="save-btn" id="btn-save-${sheetRowIndex}" onclick="saveRow(${sheetRowIndex})" disabled>💾 Simpan</button></td>`;
               }
               html += '</tr>';
             });
@@ -473,14 +477,31 @@
         });
     }
 
+    // === BARU: Fungsi Enable Tombol Simpan ===
+    function enableSaveButton(rowIndex) {
+      const btn = document.getElementById(`btn-save-${rowIndex}`);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '💾 Simpan';
+      }
+    }
+
     // === Fungsi Simpan Row ===
     function saveRow(rowIndex) {
-      const tr = document.querySelector(`tr[data-row="${rowIndex}"]`);
-      if (!tr) return;
+      const btn = document.getElementById(`btn-save-${rowIndex}`);
+      if (!btn) return;
       
-      const saveBtn = tr.querySelector('.save-btn');
-      saveBtn.disabled = true;
-      saveBtn.textContent = ' Menyimpan...';
+      // Disable tombol saat proses
+      btn.disabled = true;
+      btn.textContent = '⏳ Menyimpan...'; // Diperbaiki iconnya
+      
+      const tr = document.getElementById(`row-${rowIndex}`);
+      if (!tr) {
+        alert('❌ Error: Baris tidak ditemukan');
+        btn.disabled = false;
+        btn.textContent = '💾 Simpan';
+        return;
+      }
       
       // Kumpulkan semua perubahan di row ini
       const selects = tr.querySelectorAll('.status-select');
@@ -497,15 +518,19 @@
             col: col,
             newValue: newValue
           });
+          // Update atribut data-original agar tidak tersimpan ulang jika tidak berubah
+          select.setAttribute('data-original', newValue);
         }
       });
       
       if (updates.length === 0) {
         alert('ℹ️ Tidak ada perubahan yang dilakukan');
-        saveBtn.disabled = false;
-        saveBtn.textContent = '💾 Simpan';
+        btn.disabled = false;
+        btn.textContent = '💾 Simpan';
         return;
       }
+      
+      console.log("Sending updates:", updates); // Debug log
       
       // Kirim ke Apps Script
       fetch(APPS_SCRIPT_URL, {
@@ -521,15 +546,11 @@
       })
       .then(response => response.json())
       .then(data => {
+        console.log("Response:", data); // Debug log
         if (data.success) {
           alert('✅ Data berhasil disimpan!');
           tr.style.background = '#d4edda';
           setTimeout(() => { tr.style.background = ''; }, 2000);
-          
-          // Update data-original
-          selects.forEach(select => {
-            select.setAttribute('data-original', select.value);
-          });
         } else {
           alert('❌ Gagal menyimpan: ' + data.error);
           tr.style.background = '#f8d7da';
@@ -540,8 +561,8 @@
         alert('❌ Terjadi kesalahan koneksi');
       })
       .finally(() => {
-        saveBtn.disabled = false;
-        saveBtn.textContent = '💾 Simpan';
+        btn.disabled = false;
+        btn.textContent = '💾 Simpan';
       });
     }
 
