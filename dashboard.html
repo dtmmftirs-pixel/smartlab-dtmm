@@ -161,41 +161,86 @@
     }
     .status-table tr:last-child td { border-bottom: none; }
     
-    /* === EDITABLE CELLS === */
+    /* === EDITABLE CELLS & COMBOBOX STYLING (DIMODIFIKASI) === */
     .editable-cell {
       cursor: pointer;
       position: relative;
+      padding: 4px;
     }
     
     .editable-cell:hover {
       background: #fff3cd !important;
-      outline: 2px dashed #ffc107;
+      border-radius: 8px;
     }
     
     .editable-cell select {
       width: 100%;
-      padding: 6px;
-      border: 2px solid #1a73e8;
-      border-radius: 4px;
+      padding: 10px 35px 10px 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
       font-size: 13px;
-      background: white;
+      font-weight: 500;
+      background: linear-gradient(to bottom, #ffffff, #f8f9fa);
       cursor: pointer;
+      transition: all 0.3s ease;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      /* Custom Arrow SVG */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231a73e8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .editable-cell select:hover {
+      border-color: #1a73e8;
+      box-shadow: 0 4px 8px rgba(26,115,232,0.15);
+      transform: translateY(-1px);
+    }
+    
+    .editable-cell select:focus {
+      outline: none;
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 4px rgba(26,115,232,0.15);
+      background-color: #ffffff;
+    }
+    
+    /* Warna border kiri berbeda untuk setiap status */
+    .editable-cell select.status-belum { border-left: 5px solid #ffc107; }
+    .editable-cell select.status-sudah { border-left: 5px solid #28a745; }
+    .editable-cell select.status-lunas { border-left: 5px solid #17a2b8; }
+    .editable-cell select.status-pending { border-left: 5px solid #fd7e14; }
+    .editable-cell select.status-proses { border-left: 5px solid #0d6efd; }
+    .editable-cell select.status-selesai { border-left: 5px solid #20c997; }
+    .editable-cell select.status-batal { border-left: 5px solid #dc3545; }
+    
+    /* Animasi untuk perubahan nilai */
+    @keyframes pulse-green {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+    
+    .editable-cell select.changed {
+      animation: pulse-green 0.6s ease;
+      border-color: #28a745;
+      box-shadow: 0 0 0 4px rgba(40,167,69,0.15);
     }
     
     .save-btn {
       background: #28a745;
       color: white;
       border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
       cursor: pointer;
       font-size: 12px;
       font-weight: 600;
       transition: all 0.3s;
     }
     
-    .save-btn:hover { background: #218838; }
-    .save-btn:disabled { background: #ccc; cursor: not-allowed; }
+    .save-btn:hover { background: #218838; transform: translateY(-1px); }
+    .save-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
     
     .edit-hint {
       font-size: 12px;
@@ -350,6 +395,44 @@
       });
     }
 
+    // === Helper untuk mendapatkan class warna status ===
+    function getStatusCode(status) {
+      const codes = {
+        'Belum': 'status-belum',
+        'Sudah': 'status-sudah',
+        'Lunas': 'status-lunas',
+        'Pending': 'status-pending',
+        'Dalam Proses': 'status-proses',
+        'Selesai': 'status-selesai',
+        'Dibatalkan': 'status-batal'
+      };
+      return codes[status] || '';
+    }
+
+    // === Fungsi untuk update styling combobox ===
+    function updateSelectStyling() {
+      document.querySelectorAll('.status-select').forEach(select => {
+        const value = select.value;
+        const originalValue = select.getAttribute('data-original');
+        
+        // Hapus semua kelas status lama
+        select.className = 'status-select';
+        
+        // Tambahkan kelas status baru
+        const statusClass = getStatusCode(value);
+        if (statusClass) {
+          select.classList.add(statusClass);
+        }
+        
+        // Tambahkan kelas changed jika nilai berbeda dari original
+        if (value !== originalValue) {
+          select.classList.add('changed');
+        } else {
+          select.classList.remove('changed');
+        }
+      });
+    }
+
     function loadStatusPengujian() {
       document.getElementById('menuGrid').style.display = 'none';
       document.getElementById('menuHeader').style.display = 'none';
@@ -438,9 +521,10 @@
                   
                   // Escape value untuk atribut HTML agar tidak rusak jika ada tanda kutip
                   const safeValue = String(cell).replace(/"/g, '&quot;');
+                  const statusClass = getStatusCode(cell);
                   
                   // === PERBAIKAN: Tambahkan onchange untuk mengaktifkan tombol simpan ===
-                  let selectHTML = `<select class="status-select" data-row="${sheetRowIndex}" data-col="${sheetColIndex}" data-original="${safeValue}" onchange="enableSaveButton(${sheetRowIndex})">`;
+                  let selectHTML = `<select class="status-select ${statusClass}" data-row="${sheetRowIndex}" data-col="${sheetColIndex}" data-original="${safeValue}" onchange="enableSaveButton(${sheetRowIndex})">`;
                   options.forEach(opt => {
                     const selected = (opt === cell) ? 'selected' : '';
                     selectHTML += `<option value="${opt}" ${selected}>${opt}</option>`;
@@ -467,6 +551,9 @@
             
             container.innerHTML = html;
             
+            // Jalankan styling awal
+            setTimeout(updateSelectStyling, 100);
+            
           } else {
             container.innerHTML = `<div class="empty-state" style="color: #dc3545;">⚠️ Gagal memuat data: ${data.error}</div>`;
           }
@@ -477,13 +564,15 @@
         });
     }
 
-    // === BARU: Fungsi Enable Tombol Simpan ===
+    // === Fungsi Enable Tombol Simpan ===
     function enableSaveButton(rowIndex) {
       const btn = document.getElementById(`btn-save-${rowIndex}`);
       if (btn) {
         btn.disabled = false;
         btn.textContent = '💾 Simpan';
       }
+      // Update styling combobox
+      updateSelectStyling();
     }
 
     // === Fungsi Simpan Row ===
@@ -493,7 +582,7 @@
       
       // Disable tombol saat proses
       btn.disabled = true;
-      btn.textContent = '⏳ Menyimpan...'; // Diperbaiki iconnya
+      btn.textContent = '⏳ Menyimpan...';
       
       const tr = document.getElementById(`row-${rowIndex}`);
       if (!tr) {
