@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Lab - Dashboard</title>
-  <!-- Memuat config.js agar variabel APPS_SCRIPT_URL tersedia -->
   <script src="config.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -117,7 +116,7 @@
       background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
       padding: 20px;
       border-radius: 12px;
-      text-decoration: none; /* Penting agar <a> tidak bergaris bawah */
+      text-decoration: none;
       color: #1a73e8;
       transition: all 0.3s ease;
       border: 2px solid transparent;
@@ -148,6 +147,23 @@
       position: relative;
     }
     
+    /* === FULL SCREEN MODE === */
+    .status-table-container.fullscreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      min-width: 100vw;
+      min-height: 100vh;
+      max-height: 100vh;
+      z-index: 9999;
+      border-radius: 0;
+      border: none;
+    }
+    
     .status-table {
       width: 100%;
       border-collapse: collapse;
@@ -175,6 +191,7 @@
     .status-table tr:last-child td { border-bottom: none; }
     .status-table tr:hover td { background: #f8f9fa; }
     
+    /* === EDITABLE CELL === */
     .editable-cell {
       cursor: pointer;
       position: relative;
@@ -190,6 +207,7 @@
       outline: 2px solid #1a73e8;
     }
     
+    /* === COMBOBOX STYLING === */
     .status-combobox {
       width: 100%;
       padding: 6px;
@@ -198,6 +216,53 @@
       font-size: 13px;
       background: white;
       cursor: pointer;
+    }
+    
+    /* === TOMBOL AKSI (Maximize/Restore) === */
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    
+    .btn-maximize {
+      background: #17a2b8;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .btn-maximize:hover {
+      background: #138496;
+      transform: translateY(-1px);
+    }
+    
+    .btn-restore {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .btn-restore:hover {
+      background: #5a6268;
+      transform: translateY(-1px);
     }
     
     .save-btn {
@@ -235,7 +300,6 @@
       font-size: 13px;
       margin-bottom: 15px;
       transition: background 0.3s;
-      text-decoration: none; 
     }
     .btn-back:hover { background: #444; }
     
@@ -255,27 +319,36 @@
       <div class="user-info">
         <div id="userName">Loading...</div>
         <div class="user-email" id="userEmail"></div>
-        <button class="logout-btn" onclick="prosesLogout()">🚪 Logout</button>
+        <button class="logout-btn" onclick="prosesLogout()"> Logout</button>
       </div>
     </div>
     
     <div class="content">
+      <!-- Banner Selamat Datang -->
       <div class="welcome-banner" id="welcomeBanner">
         <span class="icon">👋</span>
         <span id="welcomeText">Memuat data pengguna...</span>
       </div>
 
+      <!-- Header Menu Utama -->
       <div id="menuHeader">
         <h2>Menu Utama <span id="roleBadge" class="role-badge" style="display:none;">Loading...</span></h2>
         <p style="color: #666; font-size: 13px;">Pilih menu yang ingin diakses:</p>
       </div>
       
+      <!-- Container Menu Utama -->
       <div id="menuGrid" class="menu-grid">
         <div class="loading-menus">Sedang memuat menu sesuai hak akses...</div>
       </div>
 
+      <!-- === Container View Status Pengujian === -->
       <div id="statusView" style="display: none;">
-        <a href="https://sites.google.com/view/smartlab-dtmmits/home" target="_top" class="btn-back">← Kembali ke Menu Utama</a>
+        <div class="action-buttons">
+          <button class="btn-back" onclick="showMainMenu()">← Kembali ke Menu Utama</button>
+          <!-- === TOMBOL MAXIMIZE === -->
+          <button class="btn-maximize" id="btnMaximize" onclick="toggleMaximize()">⛶ Full Screen</button>
+        </div>
+        
         <h2 id="statusViewTitle">Status Pengujian Anda</h2>
         <p id="statusViewDesc" style="color: #666; font-size: 13px; margin-bottom: 10px;">Berikut adalah riwayat pengujian yang terdaftar atas nama Anda:</p>
         
@@ -297,6 +370,7 @@
     const email = localStorage.getItem('user_email') || '';
     
     let currentUserRole = 'User';
+    let isMaximized = false; // State untuk track mode fullscreen
     
     // 3. Tampilkan data di Header
     document.getElementById('userName').textContent = name;
@@ -306,28 +380,37 @@
     const welcomeMessage = `Selamat Datang <strong>${name}</strong> di Smart Lab DTMM, apabila ada pertanyaan silahkan kontak <strong>Cak Mamet</strong>`;
     document.getElementById('welcomeText').innerHTML = welcomeMessage;
     
-    // 5. Definisi Menu berdasarkan Role (DIMODIFIKASI: Semua menggunakan 'link' dan 'isComingSoon')
+    // 5. Definisi Menu berdasarkan Role
     const menuData = {
       'Manajemen': [
-        { title: '📊 Monitoring Pengujian', desc: 'Pantau seluruh proses pengujian yang berjalan', link: '#', isComingSoon: true },
-        { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', link: 'https://sites.google.com/view/smartlab-dtmmits/home', openInNewTab: false },
-        { title: '💰 Rekap Keuangan', desc: 'Laporan pendapatan dan biaya operasional lab', link: '#', isComingSoon: true },
-        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', link: '#', isComingSoon: true }
+        { title: '📊 Monitoring Pengujian', desc: 'Pantau seluruh proses pengujian yang berjalan', action: 'comingSoon' },
+        { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', action: 'comingSoon' },
+        { title: ' Rekap Keuangan', desc: 'Laporan pendapatan dan biaya operasional lab', action: 'comingSoon' },
+        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
       ],
       'Staff': [
-        { title: '📝 Status Pengujian', desc: 'Kelola dan update progres sampel pengujian', link: 'https://sites.google.com/view/smartlab-dtmmits/mon-pengujian', openInNewTab: false },
-        { title: '📊 Monitoring Pengujian', desc: 'Pantau proses pengujian yang sedang aktif', link: '#', isComingSoon: true },
-        { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', link: 'https://sites.google.com/view/smartlab-dtmmits/home', openInNewTab: false },
-        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', link: '#', isComingSoon: true }
+        { title: ' Status Pengujian', desc: 'Kelola dan update progres sampel pengujian', action: 'loadStatusPengujian' },
+        { title: '📊 Monitoring Pengujian', desc: 'Pantau proses pengujian yang sedang aktif', action: 'comingSoon' },
+        { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', action: 'comingSoon' },
+        { title: ' Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
       ],
       'User': [
-        { title: '📝 Daftar Pengujian', desc: 'Ajukan permohonan pengujian material baru', link: 'https://forms.gle/Ci3s32NdwZrKcWEX9', openInNewTab: true },
-        { title: '📊 Status Pengujian', desc: 'Cek progres dan hasil sampel pengujian Anda', link: 'https://sites.google.com/view/smartlab-dtmmits/mon-pengujian', openInNewTab: false },
-        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', link: '#', isComingSoon: true }
+        { 
+          title: '📝 Daftar Pengujian', 
+          desc: 'Ajukan permohonan pengujian material baru', 
+          link: 'https://forms.gle/Ci3s32NdwZrKcWEX9',
+          openInNewTab: true
+        },
+        { 
+          title: ' Status Pengujian', 
+          desc: 'Cek progres dan hasil sampel pengujian Anda', 
+          action: 'loadStatusPengujian' 
+        },
+        { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
       ]
     };
 
-    // 6. Fungsi render menu (DIMODIFIKASI: Selalu merender elemen <a>)
+    // 6. Fungsi render menu
     function renderMenus(role) {
       if (role !== 'Staff' && role !== 'Manajemen') {
         role = 'User';
@@ -345,28 +428,26 @@
       menuGrid.innerHTML = '';
       
       menus.forEach(menu => {
-        // DIMODIFIKASI: Selalu menggunakan elemen <a> agar menjadi link HTML yang proper
-        const card = document.createElement('a');
+        const card = document.createElement('div');
         card.className = 'menu-card';
-        
-        if (menu.isComingSoon) {
-          card.href = '#';
-          card.onclick = function(e) {
-            e.preventDefault();
-            alert('Fitur ini sedang dalam pengembangan (Coming Soon).');
-          };
-        } else {
-          card.href = menu.link;
-          // _top memaksa link membuka di window utama (keluar dari iframe Google Sites)
-          // _blank membuka di tab baru
-          card.target = menu.openInNewTab ? '_blank' : '_top';
-          
-          if (menu.openInNewTab) {
-            card.rel = 'noopener noreferrer';
-          }
-        }
-        
         card.innerHTML = `<h3>${menu.title}</h3><p>${menu.desc}</p>`;
+        
+        card.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          if (menu.action === 'loadStatusPengujian') {
+            loadStatusPengujian();
+          } else if (menu.action === 'comingSoon') {
+            alert('Fitur ini sedang dalam pengembangan (Coming Soon).');
+          } else if (menu.link && menu.link !== '#') {
+            if (menu.openInNewTab) {
+              window.open(menu.link, '_blank', 'noopener,noreferrer');
+            } else {
+              window.location.href = menu.link;
+            }
+          }
+        });
+        
         menuGrid.appendChild(card);
       });
     }
@@ -406,7 +487,7 @@
                 
               container.innerHTML = `
                 <div class="empty-state">
-                  <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+                  <div style="font-size: 40px; margin-bottom: 10px;"></div>
                   <strong>Tidak ada data ditemukan</strong><br>
                   <span style="font-size: 13px;">${emptyMsg}</span>
                 </div>`;
@@ -473,7 +554,27 @@
         });
     }
 
-    // === FUNGSI BARU: Enable Edit Cell ===
+    // === FUNGSI BARU: Toggle Maximize/Restore ===
+    function toggleMaximize() {
+      const container = document.querySelector('.status-table-container');
+      const btn = document.getElementById('btnMaximize');
+      
+      isMaximized = !isMaximized;
+      
+      if (isMaximized) {
+        container.classList.add('fullscreen');
+        btn.innerHTML = '❌ Restore';
+        btn.className = 'btn-restore';
+        document.body.style.overflow = 'hidden'; // Prevent body scroll
+      } else {
+        container.classList.remove('fullscreen');
+        btn.innerHTML = '⛶ Full Screen';
+        btn.className = 'btn-maximize';
+        document.body.style.overflow = ''; // Restore body scroll
+      }
+    }
+
+    // === FUNGSI: Enable Edit Cell ===
     function enableEdit(cell) {
       if (cell.classList.contains('editing')) return;
       
@@ -504,7 +605,7 @@
       }
     }
 
-    // === FUNGSI BARU: Update Nilai Cell Sementara ===
+    // === FUNGSI: Update Nilai Cell Sementara ===
     function updateCell(select, row, col) {
       const newValue = select.value;
       const cell = select.parentElement;
@@ -515,7 +616,7 @@
       cell.closest('tr').style.background = '#fff3cd';
     }
 
-    // === FUNGSI BARU: Simpan Perubahan ke Google Sheet ===
+    // === FUNGSI: Simpan Perubahan ke Google Sheet ===
     function saveRow(rowIndex) {
       const tr = document.querySelector(`tr[data-row="${rowIndex}"]`);
       if (!tr) return;
@@ -571,6 +672,11 @@
 
     // === Fungsi Kembali ke Menu Utama ===
     function showMainMenu() {
+      // Restore dari fullscreen jika sedang maximize
+      if (isMaximized) {
+        toggleMaximize();
+      }
+      
       document.getElementById('statusView').style.display = 'none';
       document.getElementById('menuGrid').style.display = 'grid';
       document.getElementById('menuHeader').style.display = 'block';
