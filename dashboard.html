@@ -185,94 +185,6 @@
       background: #f9f9f9;
       border-radius: 8px;
     }
-
-    /* === BARU: CSS untuk FULLSCREEN MODE === */
-    .fullscreen-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.85);
-      z-index: 9999;
-      display: none;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-    
-    .fullscreen-overlay.active {
-      display: flex;
-    }
-    
-    .fullscreen-container {
-      background: white;
-      border-radius: 16px;
-      width: 100%;
-      height: 100%;
-      max-height: 100vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 0 60px rgba(0,0,0,0.5);
-    }
-    
-    .fullscreen-header {
-      background: linear-gradient(135deg, #1a73e8 0%, #0d5bb5 100%);
-      color: white;
-      padding: 20px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-shrink: 0;
-    }
-    
-    .fullscreen-header h2 {
-      margin: 0;
-      font-size: 20px;
-    }
-    
-    .btn-fullscreen-close {
-      background: rgba(255,255,255,0.2);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      transition: all 0.3s;
-    }
-    
-    .btn-fullscreen-close:hover {
-      background: rgba(255,255,255,0.3);
-    }
-    
-    .btn-maximize {
-      background: rgba(255,255,255,0.2);
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 600;
-      transition: all 0.3s;
-      margin-left: 10px;
-      vertical-align: middle;
-    }
-    
-    .btn-maximize:hover {
-      background: rgba(255,255,255,0.3);
-      transform: translateY(-1px);
-    }
-    
-    .fullscreen-content {
-      flex: 1;
-      overflow: auto;
-      padding: 20px;
-      background: #f8f9fa;
-    }
   </style>
 </head>
 <body>
@@ -318,21 +230,6 @@
     </div>
   </div>
 
-  <!-- === BARU: FULLSCREEN OVERLAY === -->
-  <div class="fullscreen-overlay" id="fullscreenOverlay">
-    <div class="fullscreen-container">
-      <div class="fullscreen-header">
-        <h2 id="fullscreenTitle">Monitoring Status Pengujian - Full Screen</h2>
-        <button class="btn-fullscreen-close" onclick="closeFullscreen()">✕ Tutup Fullscreen</button>
-      </div>
-      <div class="fullscreen-content">
-        <div id="fullscreenTableContainer">
-          <!-- Tabel akan di-copy ke sini -->
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script>
     // 1. Cek sesi
     if (localStorage.getItem('isLoggedIn') !== 'true') {
@@ -343,8 +240,8 @@
     const name = localStorage.getItem('user_name') || 'Pengguna';
     const email = localStorage.getItem('user_email') || '';
     
-    // === MODIFIKASI: Default role menjadi 'User' (singular) ===
-    let currentUserRole = 'User';
+    // === BARU: Variabel global untuk menyimpan role user ===
+    let currentUserRole = 'Users';
     
     // 3. Tampilkan data di Header
     document.getElementById('userName').textContent = name;
@@ -368,8 +265,7 @@
         { title: '🔧 Monitoring Alat', desc: 'Status, kondisi, dan jadwal penggunaan alat', action: 'comingSoon' },
         { title: '📖 Katalog Lab', desc: 'Lihat katalog lengkap pengujian dan harga', action: 'comingSoon' }
       ],
-      // === MODIFIKASI: Ganti key 'Users' menjadi 'User' ===
-      'User': [
+      'Users': [
         { 
           title: '📝 Daftar Pengujian', 
           desc: 'Ajukan permohonan pengujian material baru', 
@@ -387,11 +283,7 @@
 
     // 6. Fungsi render menu
     function renderMenus(role) {
-      // === MODIFIKASI: Normalisasi role ===
-      if (role !== 'Staff' && role !== 'Manajemen') {
-        role = 'User';
-      }
-      
+      // === BARU: Simpan role ke variabel global ===
       currentUserRole = role;
       
       const menuGrid = document.getElementById('menuGrid');
@@ -400,7 +292,7 @@
       roleBadge.textContent = role;
       roleBadge.style.display = 'inline-block';
       
-      const menus = menuData[role] || menuData['User'];
+      const menus = menuData[role] || menuData['Users'];
       menuGrid.innerHTML = '';
       
       menus.forEach(menu => {
@@ -443,8 +335,7 @@
       const statusDesc = document.getElementById('statusViewDesc');
       
       if (currentUserRole === 'Manajemen' || currentUserRole === 'Staff') {
-        // === BARU: Tambahkan tombol maximize di judul ===
-        statusTitle.innerHTML = 'Monitoring Status Pengujian <button class="btn-maximize" onclick="openFullscreen()" title="Buka Full Screen">⛶ Full Screen</button>';
+        statusTitle.textContent = 'Monitoring Status Pengujian';
         statusDesc.textContent = 'Berikut adalah seluruh data riwayat pengujian di laboratorium:';
       } else {
         statusTitle.textContent = 'Status Pengujian Anda';
@@ -462,8 +353,8 @@
         .then(data => {
           if (data.success) {
             if (!data.data || data.data.length === 0) {
-              // === MODIFIKASI: Cek 'User' bukan 'Users' ===
-              const emptyMsg = (currentUserRole === 'User') 
+              // === BARU: Pesan kosong yang berbeda berdasarkan role ===
+              const emptyMsg = (currentUserRole === 'Users') 
                 ? 'Anda belum mengajukan pengujian atau data sedang diproses.' 
                 : 'Belum ada data pengujian yang tercatat di sistem.';
                 
@@ -512,54 +403,6 @@
         });
     }
 
-    // === BARU: Fungsi Buka Fullscreen Mode ===
-    function openFullscreen() {
-      const overlay = document.getElementById('fullscreenOverlay');
-      const container = document.getElementById('fullscreenTableContainer');
-      const title = document.getElementById('fullscreenTitle');
-      
-      // Copy judul
-      title.textContent = document.getElementById('statusViewTitle').textContent.replace(' ⛶ Full Screen', '') + ' - Full Screen';
-      
-      // Copy tabel yang sudah ada
-      const originalTable = document.querySelector('.status-table-container');
-      if (originalTable) {
-        container.innerHTML = originalTable.outerHTML;
-      }
-      
-      // Tampilkan overlay
-      overlay.classList.add('active');
-      
-      // Disable scroll pada body
-      document.body.style.overflow = 'hidden';
-    }
-
-    // === BARU: Fungsi Tutup Fullscreen Mode ===
-    function closeFullscreen() {
-      const overlay = document.getElementById('fullscreenOverlay');
-      overlay.classList.remove('active');
-      
-      // Enable scroll pada body
-      document.body.style.overflow = '';
-    }
-    
-    // Tutup fullscreen dengan klik di luar container
-    document.getElementById('fullscreenOverlay').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeFullscreen();
-      }
-    });
-    
-    // Tutup fullscreen dengan tombol ESC
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        const overlay = document.getElementById('fullscreenOverlay');
-        if (overlay.classList.contains('active')) {
-          closeFullscreen();
-        }
-      }
-    });
-
     // === Fungsi Kembali ke Menu Utama ===
     function showMainMenu() {
       // Tampilkan kembali semua elemen yang disembunyikan
@@ -578,18 +421,15 @@
           if (data.success) {
             renderMenus(data.role);
           } else {
-            // === MODIFIKASI: Fallback ke 'User' ===
-            renderMenus('User');
+            renderMenus('Users');
           }
         })
         .catch(error => {
           console.error("Error fetching role:", error);
-          // === MODIFIKASI: Fallback ke 'User' ===
-          renderMenus('User');
+          renderMenus('Users');
         });
     } else {
-      // === MODIFIKASI: Fallback ke 'User' ===
-      renderMenus('User');
+      renderMenus('Users');
     }
     
     // 8. Fungsi logout
